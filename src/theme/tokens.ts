@@ -1,0 +1,68 @@
+/**
+ * Colour tokens for the canvas renderers (Konva / Babylon), which need literal colour
+ * values rather than Tailwind classes. UI chrome uses the Tailwind @theme tokens in
+ * globals.css; keep the two palettes in sync.
+ */
+export const palette = {
+  amber200: "#fde68a",
+  blue200: "#bfdbfe",
+  red200: "#fecaca",
+  orange200: "#fed7aa",
+  cyan200: "#a5f3fc",
+  teal200: "#99f6e4",
+  fuchsia200: "#f5d0fe",
+  stone300: "#d6d3d1",
+  stone200: "#e7e5e4",
+  green200: "#bbf7d0",
+  slate100: "#f1f5f9",
+  indigo200: "#c7d2fe",
+  teal100: "#ccfbf1",
+  gray200: "#e5e7eb",
+} as const;
+
+export const canvasColors = {
+  background: "#f8fafc",
+  gridMinor: "#e2e8f0",
+  gridMajor: "#cbd5e1",
+  lotStroke: "#16a34a",
+  lotFill: "rgba(22,163,74,0.06)",
+  setbackStroke: "#f59e0b",
+  setbackFill: "rgba(245,158,11,0.08)",
+  wall: "#334155",
+  wallSelected: "#2563eb",
+  wallError: "#dc2626",
+  ghost: "rgba(100,116,139,0.35)",
+  opening: "#ffffff",
+  openingStroke: "#0f172a",
+  window: "#0ea5e9",
+  door: "#92400e",
+  stair: "#7c3aed",
+  stairFill: "rgba(124,58,237,0.08)",
+  void: "rgba(124,58,237,0.5)",
+  selection: "#2563eb",
+  snap: "#e11d48",
+  guide: "rgba(225,29,72,0.6)",
+  dimension: "#0f172a",
+  text: "#0f172a",
+  textMuted: "#64748b",
+  handle: "#ffffff",
+  measure: "#0891b2",
+  draft: "#2563eb",
+  traceStroke: "#e11d48",
+  traceFill: "rgba(225,29,72,0.12)",
+  ocrChip: "rgba(37,99,235,0.85)",
+  ocrChipAssigned: "rgba(22,163,74,0.85)",
+} as const;
+
+export const sceneColors = {
+  sky: "#e0f2fe",
+  ground: "#d9f99d",
+  lot: "#86efac",
+  slab: "#e2e8f0",
+  wall: "#f8fafc",
+  wallSelected: "#93c5fd",
+  stair: "#a78bfa",
+  door: "#b45309",
+  glass: "#7dd3fc",
+  roof: "#94a3b8",
+} as const;
