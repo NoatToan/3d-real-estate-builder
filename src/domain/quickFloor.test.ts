@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planQuickFloor, QUICK_TEMPLATES, quickFloorOutline, zoneDepths, type QuickFloorOptions } from "./quickFloor";
+import { outlineFrontEdge, planQuickFloor, QUICK_TEMPLATES, quickFloorOutline, zoneDepths, type QuickFloorOptions } from "./quickFloor";
 import { createFurniture, FURNITURE_CATALOG, furnitureRect } from "./furniture";
 import { createLot, createProject, rectPolygon } from "./factory";
 import { parseProject } from "./schema";
@@ -54,6 +54,26 @@ describe("planQuickFloor", () => {
 
   it("skips the stair when asked", () => {
     expect(planQuickFloor(lot, tpl("office").zones, { ...OPTS, withStair: false })!.stairs).toHaveLength(0);
+  });
+});
+
+describe("outlineFrontEdge", () => {
+  it("finds the street edge again after a road cut re-orders the outline", () => {
+    const p = createProject("Nhà", createLot(rectPolygon(5, 20)));
+    p.constraints.roadCut = { ...p.constraints.roadCut, enabled: true, edge: 0, depth: 2 };
+    const outline = quickFloorOutline(p);
+    const edge = outlineFrontEdge(outline, p.lot.polygon, 0);
+    // The clipped outline starts on a side edge; the front is the new y = 2 line.
+    expect(outline[edge].y).toBeCloseTo(2);
+    expect(outline[(edge + 1) % outline.length].y).toBeCloseTo(2);
+
+    const plan = planQuickFloor(outline, tpl("ground").zones, { ...OPTS, frontEdge: edge })!;
+    expect(plan.depth).toBeCloseTo(17.78, 2);
+    for (const pt of generateStair(plan.stairs[0], OPTS.floorHeight).footprint) expect(pointInPolygon(pt, outline)).toBe(true);
+  });
+
+  it("keeps the index when nothing was clipped", () => {
+    expect(outlineFrontEdge(rectPolygon(20, 6), rectPolygon(20, 6), 1)).toBe(1);
   });
 });
 

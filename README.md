@@ -2,9 +2,34 @@
 
 Browser-based house designer: define a lot (trace it from a photo/scan with OCR of the dimensions, or enter it manually), draw walls, rooms, doors, windows and stairs per floor on a 2D plan, then walk around the result in 3D.
 
-- **Stack:** Next.js (App Router, static export) · React 19 · TypeScript · Tailwind CSS v4
+- **Stack:** Next.js (App Router) · React 19 · TypeScript · Tailwind CSS v4
 - **2D plan:** Konva / react-konva · **3D viewer:** Babylon.js · **OCR:** tesseract.js (Vietnamese + English, assets served locally)
 - **State:** Zustand + Immer + zundo (undo/redo) · **Persistence:** IndexedDB (`idb-keyval`), projects can be exported/imported as `.reb.json`
+
+**Live:** https://3d-real-estate-builder-rho.vercel.app
+
+## Demo
+
+![Demo: tạo lô đất, AI thiết kế mặt sàn, xem 3D và tài chính](docs/demo/tour.gif)
+
+Every image below is captured by the Playwright tour in [`e2e/demo.spec.ts`](e2e/demo.spec.ts), so the README shows what the current code actually does (`pnpm demo` regenerates them). The AI step uses a canned Claude answer, so it runs without an API key.
+
+| | Bước | Kết quả |
+| --- | --- | --- |
+| 1 | **Danh sách dự án** — mở app | ![](docs/demo/01-home.png) |
+| 2 | **Dự án mới** — đặt tên, chọn "Nhập kích thước" (5 × 20 m) hoặc "Từ ảnh sổ đỏ" | ![](docs/demo/02-new-project.png) |
+| 3 | **Trình dựng** — thanh công cụ có chữ, checklist "Các bước dựng nhà" ở panel phải | ![](docs/demo/03-editor.png) |
+| 4 | **Giải phóng mặt bằng** — Ràng buộc → bật lộ giới, thu hồi 2 m ở mặt tiền; phần bị cắt tô cam, thống kê tính trên đất còn lại | ![](docs/demo/04-road-cut.png) |
+| 5 | **Thiết kế bằng AI** — Tạo nhanh → mô tả bằng lời (hoặc nói) → Claude trả về các phòng, lời giải thích và hình xem trước | ![](docs/demo/05-ai-design.png) |
+| 6 | **Dựng mặt sàn** — tường, cửa, cầu thang + WC, nội thất tự vừa với lô | ![](docs/demo/06-plan-2d.png) |
+| 7 | **Thêm tầng từ mẫu** — "Thêm tầng trên" → mẫu "Tầng 2 phòng ngủ" | ![](docs/demo/07-template.png) |
+| 8 | **Xem 3D** — các tầng, nội thất, cầu thang | ![](docs/demo/08-viewer-3d.png) |
+| 9 | **Hướng dẫn sử dụng** — giải thích từng bước và thuật ngữ | ![](docs/demo/09-guide.png) |
+| 10 | **Tài chính** — diện tích quy đổi từ bản vẽ, chi phí, vay, cho thuê, dòng tiền 20 năm | ![](docs/demo/10-finance.png) |
+
+New user-facing features must add a step here — see [Feature showcase rule](AGENTS.md#feature-showcase-rule-every-feature-update).
+
+## Features
 
 **Getting started is guided:** the side panel opens with a 5-step checklist (lot → walls → doors/stairs → furniture → floors/3D/finance) with one-click actions, the left toolbar has text labels, and **Hướng dẫn** (or `?`) opens a plain-language manual with the jargon explained. **Tạo nhanh** lays out a whole townhouse floor from a template (ground floor, 2 bedrooms, office, shop, worship + laundry, open) as bands from the street to the back: walls, doors, facade window/door, a U stair with a WC beside it, and furniture, fitted to the lot, road cut and setbacks. A **furniture library** (24 pieces: living, bedroom, kitchen, bath, office, car/motorbike…) can be placed, dragged, rotated (R) and resized; each piece is one part list drawn as the 2D symbol and built as the 3D model. In 3D, the top visible floor shows 1.2 m walls (toggle) so rooms and furniture are visible.
 
@@ -36,6 +61,8 @@ pnpm dev                    # http://localhost:3000
 | `pnpm lint` / `pnpm typecheck` | ESLint / `tsc --noEmit` |
 | `pnpm test` | Unit tests (Vitest) for geometry, domain, store, persistence, OCR parsing |
 | `pnpm test:coverage` | Tests with coverage thresholds |
+| `pnpm test:e2e` | Playwright feature tour (`e2e/`) against a production build on port 3217 (`E2E_PORT` to change) |
+| `pnpm demo` | Same tour, but also saves the screenshots in `docs/demo/` and rebuilds `docs/demo/tour.gif` (needs ffmpeg) |
 
 ## Project layout
 
@@ -49,6 +76,8 @@ src/
   persistence/  IndexedDB, autosave, import/export
   ocr/          image helpers, tesseract wrapper, dimension parsing
   components/ui shared UI primitives
+e2e/            Playwright feature tour (README demo)
+docs/demo/      screenshots + GIF captured by the tour
 ```
 
 ## Environment variables
