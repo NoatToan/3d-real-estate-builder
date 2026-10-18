@@ -165,3 +165,26 @@ export function polygonInsidePolygon(inner: readonly Vec2[], outer: readonly Vec
   }
   return true;
 }
+
+/**
+ * Keeps the part of a polygon on the side of the line through `origin` that `normal`
+ * points to (Sutherland–Hodgman against one half-plane). Works for concave input; the
+ * result may contain zero-width bridges but its area is exact. Empty when nothing is kept.
+ */
+export function clipHalfPlane(poly: readonly Vec2[], origin: Vec2, normal: Vec2): Vec2[] {
+  const side = (p: Vec2) => (p.x - origin.x) * normal.x + (p.y - origin.y) * normal.y;
+  const out: Vec2[] = [];
+  for (let i = 0, n = poly.length; i < n; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % n];
+    const sa = side(a);
+    const sb = side(b);
+    if (sa >= 0) out.push(a);
+    if ((sa >= 0) !== (sb >= 0)) {
+      const t = sa / (sa - sb);
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  const cleaned = out.filter((p, i) => dist(p, out[(i + 1) % out.length]) > 1e-9);
+  return cleaned.length >= 3 && area(cleaned) > 1e-9 ? cleaned : [];
+}

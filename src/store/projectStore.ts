@@ -4,6 +4,7 @@ import type { Constraints, FinanceInputs, Floor, Id, Lot, Opening, Project, Room
 import { createFloor, createWall, newId } from "@/domain/factory";
 import { reconcileRooms } from "@/domain/rooms";
 import { buildablePolygon } from "@/domain/stats";
+import { siteLotPolygon } from "@/domain/roadCut";
 import { clampOpening } from "@/geometry/openings";
 import { insetPolygon } from "@/geometry/offset";
 import { dist } from "@/geometry/vec";
@@ -132,7 +133,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     get().mutate((d) => {
       const edgeCountChanged = d.lot.polygon.length !== lot.polygon.length;
       d.lot = lot as Draft<Lot>;
-      if (edgeCountChanged) d.constraints.setback.perEdge = lot.polygon.map(() => 0);
+      if (edgeCountChanged) {
+        d.constraints.setback.perEdge = lot.polygon.map(() => 0);
+        // Edge indices no longer match the new outline.
+        d.constraints.roadCut = { ...d.constraints.roadCut, enabled: false, edge: 0 };
+      }
     }),
 
   setConstraints: (patch) =>
@@ -265,7 +270,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   generateExteriorWalls: (floorId, source) => {
     const p = get().project;
     if (!p) return false;
-    const base = source === "buildable" ? buildablePolygon(p) : p.lot.polygon;
+    const base = source === "buildable" ? buildablePolygon(p) : siteLotPolygon(p);
     if (!base) return false;
     const t = p.defaults.exteriorWallThickness;
     // Centre line half a wall inside the boundary so the outer face sits on it.

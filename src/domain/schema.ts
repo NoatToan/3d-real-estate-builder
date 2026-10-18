@@ -104,6 +104,9 @@ export const projectSchema = z.object({
   constraints: z.object({
     keepInsideLot: z.boolean(),
     setback: z.object({ enabled: z.boolean(), perEdge: z.array(num) }),
+    roadCut: z
+      .object({ enabled: z.boolean(), edge: z.number().int().min(0), depth: num, roadWidth: num.nullable() })
+      .default({ enabled: false, edge: 0, depth: 0, roadWidth: null }),
     allowOverhang: z.boolean(),
     showStats: z.boolean(),
   }),

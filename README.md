@@ -8,6 +8,8 @@ Browser-based house designer: define a lot (trace it from a photo/scan with OCR 
 
 The **Tài chính** view (shortcut `4`) turns the drawn floors into a feasibility study: equivalent floor area (móng + floors + mái) × turnkey price, extra cost items, own capital vs. bank loan, rental income lines, and a 20-year cash flow with break-even / loan-payoff year under low / base / high scenarios. Money is in million VND; inputs are saved with the project.
 
+Lots can carry a **road cut** (giải phóng mặt bằng / lộ giới): pick the edge on the road and the depth taken; the plan and 3D show the strip in orange, and coverage, FAR, exterior walls, setbacks and the "outside the lot" check all use the land that is left.
+
 The app is fully client-side — there is no backend or database; projects are stored in the user's browser.
 
 ## Getting started

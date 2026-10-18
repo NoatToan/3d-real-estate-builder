@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { CircleAlert, Info, TriangleAlert } from "lucide-react";
 import { Box, Col, Row, Text, TextFaint, TextMuted } from "@/components/ui/BasePrimitives";
-import { NumberField, Toggle } from "@/components/ui/Fields";
+import { NumberField, SelectField, Toggle } from "@/components/ui/Fields";
 import { Section } from "@/components/ui/Section";
 import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -65,6 +65,14 @@ function Stats() {
     <Col>
       <StatRow label="Diện tích đất (tính)" value={fmtArea(s.lotArea)} strong />
       {s.certifiedArea != null && <StatRow label="Diện tích trên sổ" value={fmtArea(s.certifiedArea)} />}
+      {s.roadCutArea != null && (
+        <>
+          <StatRow label="Giải phóng đường" value={`− ${fmtArea(s.roadCutArea)}`} />
+          <StatRow label="Còn lại để xây" value={fmtArea(s.siteArea)} strong />
+          {s.frontWidthAfterCut != null && <StatRow label="Mặt tiền sau giải phóng" value={fmtLength(s.frontWidthAfterCut)} />}
+          {project.constraints.roadCut.roadWidth != null && <StatRow label="Lộ giới đường" value={fmtLength(project.constraints.roadCut.roadWidth)} />}
+        </>
+      )}
       {s.buildableArea != null && <StatRow label="Diện tích trong chỉ giới" value={fmtArea(s.buildableArea)} />}
       <StatRow label="Diện tích xây dựng (tầng 1)" value={fmtArea(s.footprintArea)} />
       <StatRow label="Mật độ xây dựng" value={fmtPercent(s.coverage)} strong />
@@ -112,6 +120,34 @@ function Constraints() {
               }}
             />
           ))}
+        </Box>
+      )}
+      <Toggle
+        label="Giải phóng mặt bằng (lộ giới)"
+        hint="Phần đất bị thu hồi để mở đường, tính từ một cạnh thửa"
+        checked={c.roadCut.enabled}
+        onChange={(enabled) => set({ roadCut: { ...c.roadCut, enabled, edge: Math.min(c.roadCut.edge, Math.max(0, lens.length - 1)) } })}
+      />
+      {c.roadCut.enabled && (
+        <Box className="grid grid-cols-2 gap-2 pl-1">
+          <SelectField
+            className="col-span-2"
+            label="Cạnh giáp đường"
+            value={String(c.roadCut.edge)}
+            options={lens.map((L, i) => ({ value: String(i), label: `Cạnh ${i + 1} (${fmtLength(L)})` }))}
+            onChange={(v) => set({ roadCut: { ...c.roadCut, edge: Number(v) } })}
+          />
+          <NumberField label="Chiều sâu thu hồi" value={c.roadCut.depth} min={0} max={200} suffix="m" onCommit={(n) => set({ roadCut: { ...c.roadCut, depth: n ?? 0 } })} />
+          <NumberField
+            label="Lộ giới đường"
+            value={c.roadCut.roadWidth}
+            min={0}
+            max={200}
+            suffix="m"
+            allowEmpty
+            placeholder="—"
+            onCommit={(roadWidth) => set({ roadCut: { ...c.roadCut, roadWidth } })}
+          />
         </Box>
       )}
       <Toggle label="Cho phép tầng trên đua ra / ban công" hint="Tầng trên được vượt chỉ giới (vẫn trong ranh đất)" checked={c.allowOverhang} onChange={(allowOverhang) => set({ allowOverhang })} />

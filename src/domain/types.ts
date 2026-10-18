@@ -42,6 +42,16 @@ export interface Constraints {
     /** Setback distance per lot edge (same indexing as lot.polygon edges). */
     perEdge: number[];
   };
+  /** Strip taken for road widening along one lot edge (giải phóng mặt bằng / lộ giới). */
+  roadCut: {
+    enabled: boolean;
+    /** Lot edge facing the road (same indexing as lot.polygon edges). */
+    edge: number;
+    /** How far the new boundary sits inside that edge, in metres. */
+    depth: number;
+    /** Planned road width, informational. */
+    roadWidth: number | null;
+  };
   /** Upper floors may extend beyond the setback line (balconies / overhangs), but never beyond the lot. */
   allowOverhang: boolean;
   showStats: boolean;

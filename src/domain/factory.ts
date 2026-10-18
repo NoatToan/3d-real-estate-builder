@@ -51,6 +51,7 @@ export function defaultConstraints(edgeCount: number): Constraints {
   return {
     keepInsideLot: true,
     setback: { enabled: false, perEdge: Array.from({ length: edgeCount }, () => 0) },
+    roadCut: { enabled: false, edge: 0, depth: 0, roadWidth: null },
     allowOverhang: false,
     showStats: true,
   };
