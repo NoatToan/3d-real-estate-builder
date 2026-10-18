@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { FileImage, Ruler } from "lucide-react";
+import { FileImage, Ruler, Sparkles } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Col, Row, TextMuted, TextPrimary } from "@/components/ui/BasePrimitives";
@@ -11,18 +11,23 @@ import { toast } from "@/components/ui/Toast";
 import { createLot, createProject, rectPolygon } from "@/domain/factory";
 import { saveProject } from "@/persistence/db";
 
-type Method = "image" | "rect";
+type Method = "image" | "rect" | "sample";
 
 export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const [name, setName] = useState("Nhà phố mới");
   const [address, setAddress] = useState("");
-  const [method, setMethod] = useState<Method>("image");
+  const [method, setMethod] = useState<Method>("rect");
   const [width, setWidth] = useState<number | null>(5);
   const [depth, setDepth] = useState<number | null>(20);
   const [busy, setBusy] = useState(false);
 
   const create = async () => {
+    if (method === "sample") {
+      onClose();
+      document.getElementById("nha-mau")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (method === "rect" && (!width || !depth)) return;
     setBusy(true);
     try {
@@ -66,7 +71,7 @@ export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: ()
         <>
           <Button onClick={onClose}>Huỷ</Button>
           <Button variant="primary" onClick={create} disabled={busy || !name.trim()}>
-            {busy ? "Đang tạo…" : "Tạo dự án"}
+            {busy ? "Đang tạo…" : method === "sample" ? "Xem nhà mẫu" : "Tạo dự án"}
           </Button>
         </>
       }
@@ -74,9 +79,10 @@ export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: ()
       <Col className="gap-4">
         <TextField label="Tên dự án" value={name} onCommit={setName} live autoFocus />
         <TextField label="Địa chỉ thửa đất (tuỳ chọn)" value={address} onCommit={setAddress} live />
-        <Row role="radiogroup" aria-label="Cách nhập ranh đất" className="gap-3">
+        <Row role="radiogroup" aria-label="Cách bắt đầu" className="flex-col gap-2 sm:flex-row sm:gap-3">
+          {option("rect", <Ruler size={16} />, "Nhập kích thước", "Nhanh nhất: rộng × sâu, sửa lại sau được.")}
           {option("image", <FileImage size={16} />, "Từ ảnh sổ đỏ", "Tải ảnh, vẽ ranh, đọc kích thước bằng OCR.")}
-          {option("rect", <Ruler size={16} />, "Nhập kích thước", "Thửa đất hình chữ nhật, chỉnh sửa sau được.")}
+          {option("sample", <Sparkles size={16} />, "Từ nhà mẫu", "Mở một nhà dựng sẵn rồi sửa theo ý mình.")}
         </Row>
         {method === "rect" && (
           <Row className="gap-3">

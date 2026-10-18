@@ -52,19 +52,23 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await dialog.getByRole("button", { name: "Tạo dự án" }).click();
   await page.waitForURL(/\/editor\/\?id=/);
   await expect(page.getByText("Các bước dựng nhà")).toBeVisible();
+  // Empty floor: the plan offers the ways to start instead of a blank grid.
+  const startCard = page.getByRole("region", { name: "Bắt đầu dựng tầng" });
+  await expect(startCard).toBeVisible();
   await shot(page, "03-editor");
 
   // 3. Road cut (giải phóng mặt bằng): 2 m taken from the front edge
-  await page.getByRole("button", { name: "Ràng buộc (tuỳ chọn)" }).click();
+  await page.getByRole("tab", { name: "Cài đặt" }).click();
   await page.getByRole("switch", { name: "Giải phóng mặt bằng (lộ giới)" }).click();
   const depth = page.getByLabel("Chiều sâu thu hồi");
   await depth.fill("2");
   await depth.press("Enter");
+  await page.getByRole("tab", { name: /Kiểm tra/ }).click();
   await expect(page.getByText("Giải phóng đường")).toBeVisible();
   await shot(page, "04-road-cut");
 
-  // 4. Describe the floor in words → Claude (mocked) → preview → build
-  await page.getByRole("button", { name: "Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" }).click();
+  // 4. Describe the floor in words → Claude (mocked) → preview → build (from the empty-floor card)
+  await startCard.getByRole("button", { name: /Dựng nhanh cả tầng/ }).click();
   const quick = page.getByRole("dialog", { name: /Tạo nhanh mặt sàn/ });
   await quick.getByLabel("Mô tả mặt sàn mong muốn").fill("Tầng trệt để 1 ô tô, phòng khách nhìn ra đường, bếp và bàn ăn 6 người phía sau, có WC cạnh cầu thang.");
   await quick.getByRole("button", { name: "Thiết kế bằng AI" }).click();
@@ -77,6 +81,7 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await shot(page, "06-plan-2d");
 
   // 5. Second floor from a template: open floor with a WC core, rooms placed next
+  await page.getByRole("tab", { name: /Bắt đầu/ }).click();
   await page.getByRole("button", { name: "Thêm tầng trên" }).click();
   await page.getByRole("button", { name: "Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" }).click();
   const quick2 = page.getByRole("dialog", { name: /Tạo nhanh mặt sàn/ });
@@ -163,7 +168,7 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
 
   // 12. Phong thuỷ: owner's year + house facing → cung mệnh, 8 sectors on the plan, checks with fixes
   await page.getByRole("radio", { name: "2D", exact: true }).click();
-  await page.getByRole("button", { name: "Phong thuỷ" }).click();
+  await page.getByRole("tab", { name: "Phong thuỷ" }).click();
   const year = page.getByLabel("Năm sinh gia chủ (âm lịch)");
   await year.fill("1990");
   await year.press("Enter");

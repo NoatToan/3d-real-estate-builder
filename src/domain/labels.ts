@@ -55,3 +55,17 @@ export const fmtLength = (m: number): string => `${nf2.format(m)} m`;
 export const fmtArea = (m2: number): string => `${nf2.format(m2)} m²`;
 export const fmtPercent = (ratio: number): string => `${nf1.format(ratio * 100)}%`;
 export const fmtNumber = (n: number): string => nf2.format(n);
+
+/** Plain-language meaning of the jargon shown next to figures (tooltips). */
+export const TERM_HINTS: Record<string, string> = {
+  "Diện tích đất (tính)": "Diện tích tính từ ranh đất đã vẽ, để so với số ghi trên sổ.",
+  "Giải phóng đường": "Phần đất phía mặt đường bị thu hồi để mở rộng đường (lộ giới). Không được xây lên phần này.",
+  "Còn lại để xây": "Diện tích đất sau khi trừ phần giải phóng đường.",
+  "Lộ giới đường": "Bề rộng đường theo quy hoạch, tính cả vỉa hè hai bên.",
+  "Diện tích trong chỉ giới": "Phần đất được phép xây sau khi chừa khoảng lùi theo quy định.",
+  "Diện tích xây dựng (tầng 1)": "Diện tích mặt sàn tầng trệt, tính theo mép ngoài tường.",
+  "Mật độ xây dựng": "Diện tích xây dựng tầng 1 chia cho diện tích đất. Mỗi địa phương có mức tối đa, nhà phố nhỏ thường được 100%.",
+  "Tổng diện tích sàn": "Cộng diện tích sàn của tất cả các tầng.",
+  "Hệ số sử dụng đất": "Tổng diện tích sàn chia cho diện tích đất. Ví dụ 3,0 nghĩa là sàn gấp 3 lần đất.",
+  "Chiều cao công trình": "Tổng chiều cao các tầng (chưa tính mái, tum).",
+};

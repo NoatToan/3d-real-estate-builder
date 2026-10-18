@@ -26,10 +26,12 @@ function Step({ n, done, title, children }: { n: number; done: boolean; title: s
 }
 
 /** Checklist at the top of the side panel: what to do next, with one-click actions. */
-export function GettingStarted() {
+export function GettingStarted({ embedded = false }: { embedded?: boolean }) {
   const project = useProjectStore((s) => s.project)!;
   const { floor } = useActiveFloor();
-  const open = useEditorStore((s) => s.panels.guide);
+  const toggled = useEditorStore((s) => s.panels.guide);
+  // In the "Bắt đầu" tab the checklist is the whole content: always open.
+  const open = embedded || toggled;
   const ed = useEditorStore.getState();
   if (!floor) return null;
 
@@ -42,12 +44,12 @@ export function GettingStarted() {
 
   return (
     <section className="border-b border-line bg-brand-50/60">
-      <button type="button" aria-expanded={open} onClick={() => ed.togglePanel("guide")} className="flex w-full items-center gap-2 px-3 py-2 text-left">
+      <button type="button" aria-expanded={open} disabled={embedded} onClick={() => ed.togglePanel("guide")} className="flex w-full items-center gap-2 px-3 py-2 text-left">
         <Text className="flex-1 text-sm font-semibold text-ink">Các bước dựng nhà</Text>
         <TextMuted className="text-xs tabular-nums">
           {doneCount}/{steps.length}
         </TextMuted>
-        <ChevronDown size={14} className={`text-ink-muted transition-transform ${open ? "" : "-rotate-90"}`} />
+        {!embedded && <ChevronDown size={14} className={`text-ink-muted transition-transform ${open ? "" : "-rotate-90"}`} />}
       </button>
       {open && (
         <Col className="gap-2.5 px-3 pb-3">

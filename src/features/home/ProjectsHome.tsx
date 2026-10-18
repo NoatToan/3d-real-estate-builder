@@ -146,20 +146,23 @@ export function ProjectsHome() {
             Đang tải…
           </TextMuted>
         ) : projects.length === 0 ? (
-          <Col className="items-center gap-4 rounded-xl border border-dashed border-line-strong bg-surface py-16 text-center">
-            <Building2 size={40} className="text-ink-faint" />
-            <Col>
-              <TextPrimary as="p" className="font-medium">
-                Chưa có dự án nào
-              </TextPrimary>
-              <TextMuted as="p" className="text-sm">
-                Tạo dự án từ ảnh sổ đỏ, nhập kích thước thửa đất, hoặc mở một nhà mẫu bên dưới.
-              </TextMuted>
-            </Col>
-            <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
-              Tạo dự án đầu tiên
-            </Button>
-          </Col>
+          <>
+            <SampleGallery lead />
+            <Row className="mt-6 flex-wrap items-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface p-4">
+              <Building2 size={28} className="text-ink-faint" />
+              <Col className="min-w-0 flex-1">
+                <TextPrimary as="p" className="font-medium">
+                  Hoặc bắt đầu từ lô đất của bạn
+                </TextPrimary>
+                <TextMuted as="p" className="text-sm">
+                  Nhập kích thước (rộng × sâu) hoặc tải ảnh sổ đỏ.
+                </TextMuted>
+              </Col>
+              <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
+                Tạo dự án trống
+              </Button>
+            </Row>
+          </>
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
@@ -198,7 +201,7 @@ export function ProjectsHome() {
             ))}
           </ul>
         )}
-        <SampleGallery />
+        {!!projects?.length && <SampleGallery />}
       </main>
       <NewProjectDialog open={creating} onClose={() => setCreating(false)} />
     </Box>
