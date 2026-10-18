@@ -24,6 +24,7 @@ import { pointAlongWall, wallLength } from "@/geometry/openings";
 import { add, dist, normalize, round, samePoint, scale as vscale, sub } from "@/geometry/vec";
 import { isTypingTarget } from "@/features/editor/useShortcuts";
 import { ObjectActions } from "@/features/editor/ObjectActions";
+import { EmptyFloorStart } from "./EmptyFloorStart";
 import { entityOutline, findEntity } from "@/domain/selection";
 import { DIRECTION_LABELS, sectorWedges, STAR_INFO } from "@/domain/fengShui";
 import { exportRegistry, activeFloorOf, useElementSize, useLotImage } from "./hooks";
@@ -706,6 +707,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
         </Stage>
       )}
       <ObjectActions floor={floor} anchor={actionAnchor} bounds={size} />
+      {floor.walls.length === 0 && floor.furniture.length === 0 && tool === "select" && draft.length === 0 && <EmptyFloorStart floorId={floor.id} floorName={floor.name} />}
       <Row className="pointer-events-none absolute bottom-0 left-0 right-0 items-center gap-4 border-t border-line bg-surface/90 px-3 py-1 text-xs">
         <TextMuted className="tabular-nums">
           {rawCursor ? `x ${rawCursor.x.toFixed(2).replace(".", ",")}  y ${rawCursor.y.toFixed(2).replace(".", ",")} m` : "—"}

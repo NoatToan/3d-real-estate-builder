@@ -3,8 +3,8 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from "lucide-react";
-import { Box, Col, Row, Text, TextMuted } from "@/components/ui/BasePrimitives";
+import { PanelLeftOpen } from "lucide-react";
+import { Box, Col, Row, TextMuted } from "@/components/ui/BasePrimitives";
 import { Button, IconButton } from "@/components/ui/Button";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useProjectStore } from "@/store/projectStore";
@@ -16,11 +16,9 @@ import { PlanCanvas } from "@/features/plan/PlanCanvas";
 import { EditorHeader } from "./EditorHeader";
 import { Toolbar } from "./Toolbar";
 import { FloorBar } from "./FloorBar";
-import { Inspector } from "./Inspector";
-import { SidePanels } from "./SidePanels";
+import { ControlPanel } from "./ControlPanel";
 import { FullScreenMessage } from "./FullScreenMessage";
 import { useShortcuts } from "./useShortcuts";
-import { GettingStarted } from "@/features/guide/GettingStarted";
 
 const Viewer3D = dynamic(() => import("@/features/viewer3d/Viewer3D").then((m) => m.Viewer3D), {
   ssr: false,
@@ -82,6 +80,8 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
         useEditorStore.getState().reset();
         useProjectStore.getState().load(p);
         useEditorStore.getState().setActiveFloor(p.floors[0].id);
+        // Nothing to look at in 3D yet on an empty project: start on the plan, 3D joins once walls exist.
+        useEditorStore.getState().setView(p.floors.some((f) => f.walls.length) ? "split" : "2d");
         if (startWithLot) useEditorStore.getState().setLotWizardOpen(true);
         setState("ready");
       })
@@ -94,6 +94,16 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
       useProjectStore.getState().close();
     };
   }, [projectId, startWithLot]);
+
+  useEffect(
+    () =>
+      useProjectStore.subscribe((st, prev) => {
+        const had = prev.project?.floors.some((f) => f.walls.length);
+        const has = st.project?.floors.some((f) => f.walls.length);
+        if (prev.project && !had && has && useEditorStore.getState().view === "2d") useEditorStore.getState().setView("split");
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (project) document.title = `${project.name} · Real Estate Builder`;
@@ -132,18 +142,7 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
             <Toolbar />
             {/* Properties sit right next to the tools, so the eye and mouse stay on the left. */}
             {panelOpen ? (
-              <aside aria-label="Thuộc tính và kiểm tra" className="w-80 shrink-0 overflow-y-auto border-r border-line bg-surface">
-                <Row className="sticky top-0 z-10 items-center gap-2 border-b border-line bg-surface px-3 py-1">
-                  <SlidersHorizontal size={14} className="text-ink-muted" />
-                  <Text className="flex-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">Bảng điều khiển</Text>
-                  <IconButton label="Thu gọn bảng điều khiển" className="h-7 w-7" onClick={() => setPanelOpen(false)}>
-                    <PanelLeftClose size={15} />
-                  </IconButton>
-                </Row>
-                <GettingStarted />
-                <Inspector />
-                <SidePanels issues={issues} />
-              </aside>
+              <ControlPanel issues={issues} onCollapse={() => setPanelOpen(false)} />
             ) : (
               <Box className="shrink-0 border-r border-line bg-surface p-1">
                 <IconButton label="Mở bảng điều khiển" onClick={() => setPanelOpen(true)}>

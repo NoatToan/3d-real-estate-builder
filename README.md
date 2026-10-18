@@ -16,10 +16,10 @@ Every image below is captured by the Playwright tour in [`e2e/demo.spec.ts`](e2e
 
 | | Bước | Kết quả |
 | --- | --- | --- |
-| 1 | **Danh sách dự án** — mở app | ![](docs/demo/01-home.png) |
-| 2 | **Dự án mới** — đặt tên, chọn "Nhập kích thước" (5 × 20 m) hoặc "Từ ảnh sổ đỏ" | ![](docs/demo/02-new-project.png) |
-| 3 | **Trình dựng** — thanh công cụ có chữ, checklist "Các bước dựng nhà" ở panel phải | ![](docs/demo/03-editor.png) |
-| 4 | **Giải phóng mặt bằng** — Ràng buộc → bật lộ giới, thu hồi 2 m ở mặt tiền; phần bị cắt tô cam, thống kê tính trên đất còn lại | ![](docs/demo/04-road-cut.png) |
+| 1 | **Trang chủ** — lần đầu vào: nhà mẫu nằm ngay đầu, bên dưới là "Tạo dự án trống" | ![](docs/demo/01-home.png) |
+| 2 | **Dự án mới** — mặc định "Nhập kích thước" (5 × 20 m); có thêm "Từ ảnh sổ đỏ" và "Từ nhà mẫu" | ![](docs/demo/02-new-project.png) |
+| 3 | **Trình dựng** — tầng trống hiện 4 cách bắt đầu ngay trên mặt bằng; Bảng điều khiển chia tab Bắt đầu · Chỉnh sửa · Kiểm tra · Phong thuỷ · Cài đặt; thanh công cụ chia nhóm Tạo · Vẽ · Xem | ![](docs/demo/03-editor.png) |
+| 4 | **Giải phóng mặt bằng** — tab Cài đặt → bật lộ giới, thu hồi 2 m; tab Kiểm tra cho số liệu trên phần đất còn lại, thuật ngữ có ⓘ giải thích | ![](docs/demo/04-road-cut.png) |
 | 5 | **Thiết kế bằng AI** — Tạo nhanh → mô tả bằng lời (hoặc nói) → Claude trả về các phòng, lời giải thích và hình xem trước | ![](docs/demo/05-ai-design.png) |
 | 6 | **Dựng mặt sàn** — tường, cửa, cầu thang + WC, nội thất tự vừa với lô | ![](docs/demo/06-plan-2d.png) |
 | 7 | **Thêm tầng từ mẫu** — "Thêm tầng trên" → mẫu "Sàn trống" (chỉ tường bao + WC) | ![](docs/demo/07-template.png) |
@@ -39,6 +39,8 @@ Every image below is captured by the Playwright tour in [`e2e/demo.spec.ts`](e2e
 New user-facing features must add a step here — see [Feature showcase rule](AGENTS.md#feature-showcase-rule-every-feature-update).
 
 ## Features
+
+**UX:** the app follows the principles in [`docs/ux-principles.md`](docs/ux-principles.md) (next step always visible, progressive disclosure with tabs, highlighted primary actions, easiest path as default, actions next to the object, icon + Vietnamese label, jargon hints, explained automatic decisions, undo everywhere).
 
 **Getting started is guided:** the control panel ("Bảng điều khiển", right next to the toolbar on the left, collapsible) opens with a 5-step checklist (lot → walls → doors/stairs → furniture → floors/3D/finance) with one-click actions, the left toolbar has text labels, and **Hướng dẫn** (or `?`) opens a plain-language manual with the jargon explained. **Tạo nhanh** lays out a whole townhouse floor from a template (ground floor, 2 bedrooms, office, shop, worship + laundry, open) as bands from the street to the back: walls, doors, facade window/door, a U stair with a WC beside it, and furniture, fitted to the lot, road cut and setbacks. A **furniture library** (24 pieces: living, bedroom, kitchen, bath, office, car/motorbike…) can be placed, dragged, rotated (R) and resized; each piece is one part list drawn as the 2D symbol and built as the 3D model. In 3D, the top visible floor shows 1.2 m walls (toggle) so rooms and furniture are visible; furniture and stairs can be dragged right in the 3D view (snapped to 5 cm, one undo step, the 2D plan follows), and the camera stays above the ground (no looking up from under the slab, panning slides along the ground). Selecting anything (2D or 3D) shows a floating actions bar next to it — rotate ±90°, size popover, duplicate, door hinge/swing, door ↔ window, wall split/length, room type picker with icons, delete — so common edits don't need the side panel (`src/features/editor/ObjectActions.tsx`, anchors from `src/domain/selection.ts`). Views, panels, checklist actions and templates carry icons (room types have their own icon + colour, templates show a strip of their rooms).
 

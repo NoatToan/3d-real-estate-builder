@@ -5,6 +5,9 @@ export type Tool = "select" | "pan" | "wall" | "room" | "door" | "window" | "sta
 /** "finance" swaps the drawing panes for the feasibility (dự toán & dòng tiền) view. */
 export type ViewMode = "2d" | "3d" | "split" | "finance";
 
+/** Tabs of the control panel (Bảng điều khiển). */
+export type PanelTab = "start" | "edit" | "check" | "fengshui" | "settings";
+
 export interface Selection {
   floorId: Id;
   ids: Id[];
@@ -26,6 +29,8 @@ export interface EditorState {
   show: { ghostBelow: boolean; dimensions: boolean; lotImage: boolean; grid: boolean; roomLabels: boolean; fengShui: boolean };
   /** cutaway: the top visible floor shows walls 1.2 m high so its rooms and furniture can be seen. */
   viewer: { hiddenFloorIds: Id[]; explode: number; upToActive: boolean; roof: boolean; cutaway: boolean };
+  /** Tab shown in the control panel; switches to "edit" when something is selected or a drawing tool is picked. */
+  panelTab: PanelTab;
   panels: { guide: boolean; issues: boolean; stats: boolean; constraints: boolean; display: boolean; fengShui: boolean };
   /** Incremented to ask the 2D/3D views to zoom to fit. */
   fitRequest: number;
@@ -55,6 +60,7 @@ export interface EditorState {
   setViewer: (patch: Partial<EditorState["viewer"]>) => void;
   toggleFloorVisibility: (id: Id) => void;
   togglePanel: (p: keyof EditorState["panels"]) => void;
+  setPanelTab: (t: PanelTab) => void;
   reset: () => void;
 }
 
@@ -70,7 +76,8 @@ const initial = {
   snap: { enabled: true, grid: 0.05, angleStep: 15 },
   show: { ghostBelow: true, dimensions: true, lotImage: false, grid: true, roomLabels: true, fengShui: true },
   viewer: { hiddenFloorIds: [] as Id[], explode: 0, upToActive: false, roof: false, cutaway: true },
-  panels: { guide: true, issues: true, stats: true, constraints: false, display: false, fengShui: false },
+  panelTab: "start" as PanelTab,
+  panels: { guide: true, issues: true, stats: true, constraints: true, display: true, fengShui: true },
   fitRequest: 0,
   lotWizardOpen: false,
   guideOpen: false,
@@ -86,17 +93,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setQuickFloorOpen: (quickFloorOpen) => set({ quickFloorOpen }),
   setRoomPlacerOpen: (roomPlacerOpen) => set({ roomPlacerOpen }),
   setView: (view) => set({ view }),
-  setTool: (tool) => set({ tool }),
+  setTool: (tool) => set(tool === "select" || tool === "pan" ? { tool } : { tool, panelTab: "edit" }),
   setActiveFloor: (activeFloorId) => set({ activeFloorId, selection: null }),
-  select: (selection) => set({ selection: selection && selection.ids.length ? selection : null }),
+  select: (selection) => (selection && selection.ids.length ? set({ selection, panelTab: "edit" }) : set({ selection: null })),
   toggleSelect: (floorId, id) => {
     const sel = get().selection;
-    if (!sel || sel.floorId !== floorId) return set({ selection: { floorId, ids: [id] } });
+    if (!sel || sel.floorId !== floorId) return set({ selection: { floorId, ids: [id] }, panelTab: "edit" });
     const ids = sel.ids.includes(id) ? sel.ids.filter((x) => x !== id) : [...sel.ids, id];
     set({ selection: ids.length ? { floorId, ids } : null });
   },
   setStairType: (stairType) => set({ stairType }),
-  pickFurniture: (furnitureKind) => set({ furnitureKind, tool: "furniture", selection: null }),
+  pickFurniture: (furnitureKind) => set({ furnitureKind, tool: "furniture", selection: null, panelTab: "edit" }),
   setWallThickness: (wallThickness) => set({ wallThickness }),
   setRoomCreatesWalls: (roomCreatesWalls) => set({ roomCreatesWalls }),
   setSnap: (patch) => set({ snap: { ...get().snap, ...patch } }),
@@ -107,5 +114,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set({ viewer: { ...get().viewer, hiddenFloorIds: hidden.includes(id) ? hidden.filter((x) => x !== id) : [...hidden, id] } });
   },
   togglePanel: (p) => set({ panels: { ...get().panels, [p]: !get().panels[p] } }),
+  setPanelTab: (panelTab) => set({ panelTab }),
   reset: () => set({ ...initial }),
 }));

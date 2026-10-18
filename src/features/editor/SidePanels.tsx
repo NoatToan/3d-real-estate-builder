@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { ChartColumn, CircleAlert, Compass, Eye, Info, Ruler, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ChartColumn, CircleAlert, Eye, Info, Ruler, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Box, Col, Row, Text, TextFaint, TextMuted } from "@/components/ui/BasePrimitives";
 import { NumberField, SelectField, Toggle } from "@/components/ui/Fields";
 import { Section } from "@/components/ui/Section";
@@ -10,7 +10,7 @@ import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
 import type { Issue } from "@/domain/validation";
 import { computeStats } from "@/domain/stats";
-import { fmtArea, fmtLength, fmtPercent } from "@/domain/labels";
+import { fmtArea, fmtLength, fmtPercent, TERM_HINTS } from "@/domain/labels";
 import { edgeLengths } from "@/geometry/polygon";
 
 const LEVEL_ICON = {
@@ -49,9 +49,17 @@ function IssuesList({ issues }: { issues: Issue[] }) {
 }
 
 function StatRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  const hint = TERM_HINTS[label];
   return (
     <Row className="justify-between py-0.5 text-xs">
-      <TextMuted>{label}</TextMuted>
+      <TextMuted className="flex items-center gap-1">
+        {label}
+        {hint && (
+          <Text title={hint} aria-label={hint} tabIndex={0} className="inline-flex cursor-help text-ink-faint hover:text-brand-600 focus:text-brand-600">
+            <Info size={12} />
+          </Text>
+        )}
+      </TextMuted>
       <Text tone="primary" className={`tabular-nums ${strong ? "font-semibold" : ""}`}>
         {value}
       </Text>
@@ -184,7 +192,8 @@ function Display() {
   );
 }
 
-export function SidePanels({ issues }: { issues: Issue[] }) {
+/** "Kiểm tra" tab: problems found in the drawing and the area figures. */
+export function ChecksTab({ issues }: { issues: Issue[] }) {
   const panels = useEditorStore((s) => s.panels);
   const toggle = useEditorStore((s) => s.togglePanel);
   const showStats = useProjectStore((s) => s.project?.constraints.showStats ?? true);
@@ -193,7 +202,7 @@ export function SidePanels({ issues }: { issues: Issue[] }) {
   return (
     <>
       <Section
-        title="Kiểm tra"
+        title="Vấn đề cần xem"
         icon={<ShieldCheck size={14} />}
         open={panels.issues}
         onToggle={() => toggle("issues")}
@@ -210,10 +219,26 @@ export function SidePanels({ issues }: { issues: Issue[] }) {
           <Stats />
         </Section>
       )}
-      <Section title="Phong thuỷ" icon={<Compass size={14} />} open={panels.fengShui} onToggle={() => toggle("fengShui")}>
-        <FengShuiPanel />
-      </Section>
-      <Section title="Ràng buộc (tuỳ chọn)" icon={<Ruler size={14} />} open={panels.constraints} onToggle={() => toggle("constraints")}>
+    </>
+  );
+}
+
+/** "Phong thuỷ" tab. */
+export function FengShuiTab() {
+  return (
+    <Box className="px-3 py-3">
+      <FengShuiPanel />
+    </Box>
+  );
+}
+
+/** "Cài đặt" tab: lot rules (setbacks, road cut…) and display options. */
+export function SettingsTab() {
+  const panels = useEditorStore((s) => s.panels);
+  const toggle = useEditorStore((s) => s.togglePanel);
+  return (
+    <>
+      <Section title="Ràng buộc lô đất" icon={<Ruler size={14} />} open={panels.constraints} onToggle={() => toggle("constraints")}>
         <Constraints />
       </Section>
       <Section title="Hiển thị" icon={<Eye size={14} />} open={panels.display} onToggle={() => toggle("display")}>

@@ -19,3 +19,7 @@ Each change that adds or changes something a user can see must also update the R
 5. **Checks** — `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build` all pass. Commit the PNGs and `tour.gif` together with the code (`tour.webm` is gitignored).
 
 Bug fixes and refactors with no visible change don't need new screenshots, but `pnpm test:e2e` must still pass. If the tour breaks because the UI changed, fix the tour in the same change.
+
+## UX rules
+
+Follow `docs/ux-principles.md` for every user-facing change (empty states that show the next step, tabs/progressive disclosure, highlighted primary actions, easiest path as default, actions next to the object, icon + Vietnamese label, jargon hints, explained automatic decisions, undo). Run its checklist before finishing.

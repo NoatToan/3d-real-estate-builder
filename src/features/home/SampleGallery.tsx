@@ -88,12 +88,12 @@ function SampleCard({ sample }: { sample: SampleHouse }) {
 }
 
 /** "Nhà mẫu": open a ready-made house and edit it instead of starting from a blank lot. */
-export function SampleGallery() {
+export function SampleGallery({ lead = false }: { lead?: boolean }) {
   return (
-    <section aria-label="Nhà mẫu" className="mt-10">
+    <section id="nha-mau" aria-label="Nhà mẫu" className={`${lead ? "" : "mt-10"} scroll-mt-6`}>
       <Row className="mb-3 items-center gap-2">
         <Sparkles size={18} className="text-brand-600" />
-        <h2 className="text-base font-semibold text-ink">Nhà mẫu — mở ra dùng ngay</h2>
+        <h2 className="text-base font-semibold text-ink">{lead ? "Bắt đầu nhanh: chọn một nhà mẫu rồi sửa theo ý mình" : "Nhà mẫu — mở ra dùng ngay"}</h2>
       </Row>
       <TextMuted as="p" className="mb-4 text-sm">
         Đã có sẵn tường, cửa, cầu thang, phòng và nội thất. Mở một mẫu rồi sửa theo ý mình: kích thước lô, phòng, đồ đạc, tài chính…
