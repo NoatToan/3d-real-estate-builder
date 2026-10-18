@@ -60,6 +60,9 @@ export function GettingStarted() {
             <Button size="sm" variant="primary" onClick={() => ed.setQuickFloorOpen(true)}>
               Mô tả bằng AI / mẫu
             </Button>
+            <Button size="sm" variant="ghost" onClick={() => ed.setRoomPlacerOpen(true)}>
+              Thêm phòng mẫu
+            </Button>
             <Button size="sm" variant="ghost" onClick={() => ed.setTool("wall")}>
               Tự vẽ vách
             </Button>

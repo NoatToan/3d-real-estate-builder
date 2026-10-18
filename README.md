@@ -22,16 +22,21 @@ Every image below is captured by the Playwright tour in [`e2e/demo.spec.ts`](e2e
 | 4 | **Giải phóng mặt bằng** — Ràng buộc → bật lộ giới, thu hồi 2 m ở mặt tiền; phần bị cắt tô cam, thống kê tính trên đất còn lại | ![](docs/demo/04-road-cut.png) |
 | 5 | **Thiết kế bằng AI** — Tạo nhanh → mô tả bằng lời (hoặc nói) → Claude trả về các phòng, lời giải thích và hình xem trước | ![](docs/demo/05-ai-design.png) |
 | 6 | **Dựng mặt sàn** — tường, cửa, cầu thang + WC, nội thất tự vừa với lô | ![](docs/demo/06-plan-2d.png) |
-| 7 | **Thêm tầng từ mẫu** — "Thêm tầng trên" → mẫu "Tầng 2 phòng ngủ" | ![](docs/demo/07-template.png) |
-| 8 | **Xem 3D** — các tầng, nội thất, cầu thang | ![](docs/demo/08-viewer-3d.png) |
-| 9 | **Hướng dẫn sử dụng** — giải thích từng bước và thuật ngữ | ![](docs/demo/09-guide.png) |
-| 10 | **Tài chính** — diện tích quy đổi từ bản vẽ, chi phí, vay, cho thuê, dòng tiền 20 năm | ![](docs/demo/10-finance.png) |
+| 7 | **Thêm tầng từ mẫu** — "Thêm tầng trên" → mẫu "Sàn trống" (chỉ tường bao + WC) | ![](docs/demo/07-template.png) |
+| 8 | **Phòng mẫu** — chọn "Phòng ngủ master": app chấm điểm các vị trí (cửa sổ ra mặt tiền/mặt sau, yên tĩnh, gần WC, giữ lối đi) và giải thích lý do | ![](docs/demo/08-room-placer.png) |
+| 9 | **Tự xếp nhiều phòng** — chọn bộ "Master + phòng ngủ đơn + WC", app đặt lần lượt từng phòng vào chỗ tốt nhất | ![](docs/demo/09-auto-rooms.png) |
+| 10 | **Kết quả** — vách, cửa, cửa sổ, giường, tủ, thiết bị WC được dựng sẵn | ![](docs/demo/10-rooms-plan.png) |
+| 11 | **Xem 3D** — các tầng, nội thất, cầu thang | ![](docs/demo/11-viewer-3d.png) |
+| 12 | **Hướng dẫn sử dụng** — giải thích từng bước và thuật ngữ | ![](docs/demo/12-guide.png) |
+| 13 | **Tài chính** — diện tích quy đổi từ bản vẽ, chi phí, vay, cho thuê, dòng tiền 20 năm | ![](docs/demo/13-finance.png) |
 
 New user-facing features must add a step here — see [Feature showcase rule](AGENTS.md#feature-showcase-rule-every-feature-update).
 
 ## Features
 
 **Getting started is guided:** the side panel opens with a 5-step checklist (lot → walls → doors/stairs → furniture → floors/3D/finance) with one-click actions, the left toolbar has text labels, and **Hướng dẫn** (or `?`) opens a plain-language manual with the jargon explained. **Tạo nhanh** lays out a whole townhouse floor from a template (ground floor, 2 bedrooms, office, shop, worship + laundry, open) as bands from the street to the back: walls, doors, facade window/door, a U stair with a WC beside it, and furniture, fitted to the lot, road cut and setbacks. A **furniture library** (24 pieces: living, bedroom, kitchen, bath, office, car/motorbike…) can be placed, dragged, rotated (R) and resized; each piece is one part list drawn as the 2D symbol and built as the 3D model. In 3D, the top visible floor shows 1.2 m walls (toggle) so rooms and furniture are visible.
+
+**Phòng mẫu** (toolbar, or "Thêm phòng mẫu" in the checklist) drops standard-size rooms — master / double / single bedroom, WC, kitchen, study, worship room, storage — into the floor's free space (rooms of type "Khác"); an empty floor gets its exterior walls first. Spots are found and ranked by rules in `src/domain/roomPlacer.ts`: a bedroom must touch the front or back facade for a window (side walls usually touch the neighbours), prefers the quiet back, a WC next door and no kitchen/garage, stays off the stair and the stair well from below, and every spot must keep all doors and the stair reachable through ≥ 0.8 m passages (grid flood fill). The best three spots are shown with their reasons; "Tự xếp nhiều phòng" places a set (e.g. 2 bedrooms + WC) one after another. Walls, door, window and furniture are built for the chosen spot.
 
 The **Tài chính** view (shortcut `4`) turns the drawn floors into a feasibility study: equivalent floor area (móng + floors + mái) × turnkey price, extra cost items, own capital vs. bank loan, rental income lines, and a 20-year cash flow with break-even / loan-payoff year under low / base / high scenarios. Money is in million VND; inputs are saved with the project.
 

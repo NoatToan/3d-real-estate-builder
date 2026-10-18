@@ -35,7 +35,7 @@ const AI_LAYOUT = {
   tips: ["Chừa giếng trời ở lõi thang để thông gió.", "Cửa WC không mở thẳng ra bếp."],
 };
 
-test("tour: lô đất → AI thiết kế mặt sàn → 3D → tài chính", async ({ page }) => {
+test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D → tài chính", async ({ page }) => {
   await page.route("**/api/ai-layout/", (route) => route.fulfill({ json: { layout: AI_LAYOUT } }));
 
   // 1. Projects home
@@ -76,35 +76,55 @@ test("tour: lô đất → AI thiết kế mặt sàn → 3D → tài chính", a
   await page.getByRole("radio", { name: "2D", exact: true }).click();
   await shot(page, "06-plan-2d");
 
-  // 5. Second floor from a template
+  // 5. Second floor from a template: open floor with a WC core, rooms placed next
   await page.getByRole("button", { name: "Thêm tầng trên" }).click();
   await page.getByRole("button", { name: "Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" }).click();
   const quick2 = page.getByRole("dialog", { name: /Tạo nhanh mặt sàn/ });
-  await quick2.getByRole("radio", { name: /Tầng 2 phòng ngủ/ }).click();
+  await quick2.getByRole("radio", { name: /Sàn trống/ }).click();
   // Top floor: no stair up.
   await quick2.getByRole("switch", { name: /Có cầu thang lên tầng trên/ }).click();
   await shot(page, "07-template");
   await quick2.getByRole("button", { name: "Dựng mặt sàn" }).click();
   await expect(quick2).toBeHidden();
 
-  // 6. 3D view
+  // 6. Standard room: the app ranks spots for a master bedroom and explains why
+  await page.getByRole("button", { name: "Thêm phòng mẫu: tự tìm vị trí phù hợp" }).click();
+  const placer = page.getByRole("dialog", { name: /Phòng mẫu/ });
+  await placer.getByRole("radio", { name: /Phòng ngủ master/ }).click();
+  const spots = placer.getByRole("radiogroup", { name: "Vị trí đề xuất" });
+  await expect(spots.getByRole("radio").first()).toContainText("phù hợp nhất");
+  await expect(spots.getByRole("radio").first()).toContainText("mở được cửa sổ");
+  await shot(page, "08-room-placer");
+
+  // 7. Fill the floor with a set of rooms in one go
+  await placer.getByRole("radio", { name: "Tự xếp nhiều phòng" }).click();
+  await placer.getByRole("radio", { name: /Master \+ phòng ngủ đơn \+ WC/ }).click();
+  await expect(placer.getByText("Không đủ chỗ cho")).toBeHidden();
+  await shot(page, "09-auto-rooms");
+  await placer.getByRole("button", { name: "Xếp các phòng" }).click();
+  await expect(placer).toBeHidden();
+  await expect(page.getByText("Đã xếp 3 phòng trên Tầng 2.")).toBeVisible();
+  await page.getByRole("radio", { name: "2D", exact: true }).click();
+  await shot(page, "10-rooms-plan");
+
+  // 8. 3D view
   await page.getByRole("radio", { name: "3D", exact: true }).click();
   await expect(page.locator("canvas").first()).toBeVisible();
   await page.waitForTimeout(2500);
-  await shot(page, "08-viewer-3d");
+  await shot(page, "11-viewer-3d");
 
-  // 7. Built-in user guide
+  // 9. Built-in user guide
   await page.getByRole("button", { name: "Hướng dẫn sử dụng" }).click();
   const guide = page.getByRole("dialog");
   await expect(guide).toBeVisible();
-  await shot(page, "09-guide");
+  await shot(page, "12-guide");
   await page.keyboard.press("Escape");
   await expect(guide).toBeHidden();
 
-  // 8. Finance
+  // 10. Finance
   await page.getByRole("radio", { name: "Tài chính" }).click();
   await expect(page.getByText(/Diện tích quy đổi/).first()).toBeVisible();
-  await shot(page, "10-finance");
+  await shot(page, "13-finance");
 
   if (capture) {
     const video = page.video();
