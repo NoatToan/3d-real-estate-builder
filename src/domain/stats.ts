@@ -1,8 +1,9 @@
 import type { Floor, Project, Vec2 } from "./types";
-import { area } from "@/geometry/polygon";
+import { area, clipHalfPlane } from "@/geometry/polygon";
 import { insetPolygon } from "@/geometry/offset";
 import { buildingOutlines } from "@/geometry/wallGraph";
 import { roomNetArea } from "./rooms";
+import { cutLineOrigin, roadCutGeometry } from "./roadCut";
 
 /** Elevation of each floor's finished floor level above ground (index-aligned with floors). */
 export function floorElevations(floors: readonly Floor[]): number[] {
@@ -15,10 +16,18 @@ export function floorElevations(floors: readonly Floor[]): number[] {
   return out;
 }
 
-/** Buildable area after setbacks, or null when setbacks are disabled / impossible. */
+/**
+ * Buildable area after setbacks, or null when setbacks are disabled / impossible.
+ * With a road cut, the front setback is measured from the new road boundary.
+ */
 export function buildablePolygon(p: Project): Vec2[] | null {
-  if (!p.constraints.setback.enabled || p.lot.polygon.length < 3) return null;
-  return insetPolygon(p.lot.polygon, p.constraints.setback.perEdge);
+  const { setback, roadCut } = p.constraints;
+  if (!setback.enabled || p.lot.polygon.length < 3) return null;
+  const inset = insetPolygon(p.lot.polygon, setback.perEdge);
+  if (!inset || !roadCutGeometry(p)) return inset;
+  const { origin, normal } = cutLineOrigin(p.lot.polygon, roadCut.edge, roadCut.depth + (setback.perEdge[roadCut.edge] ?? 0));
+  const clipped = clipHalfPlane(inset, origin, normal);
+  return clipped.length ? clipped : null;
 }
 
 export interface FloorStats {
@@ -32,6 +41,12 @@ export interface FloorStats {
 
 export interface ProjectStats {
   lotArea: number;
+  /** Area taken by road widening, null when there is no road cut. */
+  roadCutArea: number | null;
+  /** Lot area left to build on (lot − road cut). Coverage and FAR use this. */
+  siteArea: number;
+  /** Frontage along the new road boundary, null without a road cut. */
+  frontWidthAfterCut: number | null;
   certifiedArea: number | null;
   /** (computed - certified) / certified. */
   lotAreaDeviation: number | null;
@@ -65,15 +80,20 @@ export function computeStats(p: Project): ProjectStats {
   const totalFloorArea = floors.reduce((s, f) => s + f.grossArea, 0);
   const buildable = buildablePolygon(p);
   const certified = p.lot.certifiedArea;
+  const cut = roadCutGeometry(p);
+  const siteArea = cut ? cut.remainingArea : lotArea;
   return {
     lotArea,
+    roadCutArea: cut ? cut.cutArea : null,
+    siteArea,
+    frontWidthAfterCut: cut ? cut.frontWidth : null,
     certifiedArea: certified,
     lotAreaDeviation: certified && certified > 0 ? (lotArea - certified) / certified : null,
     buildableArea: buildable ? area(buildable) : null,
     footprintArea,
     totalFloorArea,
-    coverage: lotArea > 0 ? footprintArea / lotArea : 0,
-    floorAreaRatio: lotArea > 0 ? totalFloorArea / lotArea : 0,
+    coverage: siteArea > 0 ? footprintArea / siteArea : 0,
+    floorAreaRatio: siteArea > 0 ? totalFloorArea / siteArea : 0,
     totalHeight: p.floors.reduce((s, f) => s + f.height, 0),
     floors,
   };

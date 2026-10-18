@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { current, isDraft, produce, type Draft } from "immer";
-import type { Constraints, Floor, Id, Lot, Opening, Project, Room, Stair, Vec2, Wall } from "@/domain/types";
+import type { Constraints, FinanceInputs, Floor, Id, Lot, Opening, Project, Room, Stair, Vec2, Wall } from "@/domain/types";
 import { createFloor, createWall, newId } from "@/domain/factory";
 import { reconcileRooms } from "@/domain/rooms";
 import { buildablePolygon } from "@/domain/stats";
+import { siteLotPolygon } from "@/domain/roadCut";
 import { clampOpening } from "@/geometry/openings";
 import { insetPolygon } from "@/geometry/offset";
 import { dist } from "@/geometry/vec";
@@ -32,6 +33,7 @@ export interface ProjectState {
   rename: (name: string) => void;
   setLot: (lot: Lot) => void;
   setConstraints: (patch: Partial<Constraints>) => void;
+  setFinance: (patch: Partial<FinanceInputs>) => void;
 
   addFloor: (opts?: { copyFromId?: Id; copyWalls?: boolean }) => Id | null;
   removeFloor: (id: Id) => void;
@@ -131,12 +133,21 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
     get().mutate((d) => {
       const edgeCountChanged = d.lot.polygon.length !== lot.polygon.length;
       d.lot = lot as Draft<Lot>;
-      if (edgeCountChanged) d.constraints.setback.perEdge = lot.polygon.map(() => 0);
+      if (edgeCountChanged) {
+        d.constraints.setback.perEdge = lot.polygon.map(() => 0);
+        // Edge indices no longer match the new outline.
+        d.constraints.roadCut = { ...d.constraints.roadCut, enabled: false, edge: 0 };
+      }
     }),
 
   setConstraints: (patch) =>
     get().mutate((d) => {
       Object.assign(d.constraints, patch);
+    }),
+
+  setFinance: (patch) =>
+    get().mutate((d) => {
+      Object.assign(d.finance, patch);
     }),
 
   addFloor: (opts = {}) => {
@@ -259,7 +270,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   generateExteriorWalls: (floorId, source) => {
     const p = get().project;
     if (!p) return false;
-    const base = source === "buildable" ? buildablePolygon(p) : p.lot.polygon;
+    const base = source === "buildable" ? buildablePolygon(p) : siteLotPolygon(p);
     if (!base) return false;
     const t = p.defaults.exteriorWallThickness;
     // Centre line half a wall inside the boundary so the outer face sits on it.

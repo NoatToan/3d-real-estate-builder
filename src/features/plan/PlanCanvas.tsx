@@ -11,6 +11,7 @@ import type { Floor, Vec2, Wall } from "@/domain/types";
 import type { Issue } from "@/domain/validation";
 import { createOpening, createStair, createWall, newId } from "@/domain/factory";
 import { buildablePolygon } from "@/domain/stats";
+import { roadCutGeometry } from "@/domain/roadCut";
 import { fmtLength } from "@/domain/labels";
 import { canvasColors as C } from "@/theme/tokens";
 import { bbox } from "@/geometry/polygon";
@@ -90,6 +91,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
   const below: Floor | null = index > 0 ? project.floors[index - 1] : null;
   const lotPoly = project.lot.polygon;
   const buildable = useMemo(() => buildablePolygon(project), [project]);
+  const roadCut = useMemo(() => roadCutGeometry(project), [project]);
 
   const [vp, setVp] = useState<Viewport>({ scale: 30, x: 40, y: 40 });
   const [cursor, setCursor] = useState<SnapResult | null>(null);
@@ -578,7 +580,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
             <Rect x={-vp.x / vp.scale} y={-vp.y / vp.scale} width={size.width / vp.scale} height={size.height / vp.scale} fill={C.background} />
             {imgTransform && lotImage && <KImage image={lotImage} x={imgTransform.x} y={imgTransform.y} scaleX={imgTransform.s} scaleY={imgTransform.s} opacity={0.45} />}
             {show.grid && <GridShape vp={vp} width={size.width} height={size.height} />}
-            <LotShape polygon={lotPoly} buildable={buildable} scale={vp.scale} showDims={show.dimensions} />
+            <LotShape polygon={lotPoly} buildable={buildable} roadCut={roadCut} scale={vp.scale} showDims={show.dimensions} />
             {show.ghostBelow && below && <WallsShape walls={below.walls} openings={[]} selected={EMPTY} errors={EMPTY} hoverId={null} ghost />}
           </Layer>
           <Layer listening={false}>

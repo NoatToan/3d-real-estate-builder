@@ -5,6 +5,7 @@ import { Arrow, Group, Line, Rect, Shape, Text as KText } from "react-konva";
 import type { Floor, Opening, Room, Stair, Vec2, Wall } from "@/domain/types";
 import { ROOM_TYPE_COLORS, fmtArea, fmtLength } from "@/domain/labels";
 import { roomNetArea } from "@/domain/rooms";
+import type { RoadCutGeometry } from "@/domain/roadCut";
 import { canvasColors as C } from "@/theme/tokens";
 import { centroid, edgeLengths, pointInPolygon, signedArea } from "@/geometry/polygon";
 import { connectedEndpoints, wallRenderQuad } from "@/geometry/hitTest";
@@ -90,14 +91,22 @@ export const GridShape = memo(function GridShape({ vp, width, height }: { vp: Vi
   );
 });
 
+/** `from` moved `d` towards `to`. */
+function towards(from: Vec2, to: Vec2, d: number): Vec2 {
+  const u = normalize(sub(to, from));
+  return { x: from.x + u.x * d, y: from.y + u.y * d };
+}
+
 export const LotShape = memo(function LotShape({
   polygon,
   buildable,
+  roadCut,
   scale,
   showDims,
 }: {
   polygon: Vec2[];
   buildable: Vec2[] | null;
+  roadCut: RoadCutGeometry | null;
   scale: number;
   showDims: boolean;
 }) {
@@ -106,6 +115,23 @@ export const LotShape = memo(function LotShape({
   return (
     <Group listening={false}>
       <Line points={flat(polygon)} closed fill={C.lotFill} stroke={C.lotStroke} strokeWidth={2} dash={[10, 5]} strokeScaleEnabled={false} />
+      {roadCut && (
+        <>
+          <Line points={flat(roadCut.cut)} closed fill={C.roadCutFill} strokeEnabled={false} />
+          <Line points={flat(roadCut.line)} stroke={C.roadCutStroke} strokeWidth={2} strokeScaleEnabled={false} />
+          <Label at={centroid(roadCut.cut)} text={`Giải phóng ≈ ${fmtArea(roadCut.cutArea)}`} scale={scale} color={C.roadCutStroke} bold />
+          {showDims && (
+            <Label
+              at={towards(mid(roadCut.line[0], roadCut.line[1]), centroid(roadCut.cut), 12 / scale)}
+              text={`Ranh lộ giới · mặt tiền ${fmtLength(roadCut.frontWidth)}`}
+              scale={scale}
+              size={10}
+              color={C.roadCutStroke}
+              angle={uprightAngle(normalize(sub(roadCut.line[1], roadCut.line[0])))}
+            />
+          )}
+        </>
+      )}
       {buildable && <Line points={flat(buildable)} closed fill={C.setbackFill} stroke={C.setbackStroke} strokeWidth={1.5} dash={[6, 4]} strokeScaleEnabled={false} />}
       {showDims &&
         polygon.map((p, i) => {

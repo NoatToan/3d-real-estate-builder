@@ -21,6 +21,7 @@ import earcut from "earcut";
 import type { Floor, Project, Stair, Vec2 } from "@/domain/types";
 import { ROOM_TYPE_COLORS } from "@/domain/labels";
 import { floorElevations } from "@/domain/stats";
+import { roadCutGeometry } from "@/domain/roadCut";
 import { sceneColors } from "@/theme/tokens";
 import { bbox, centroid, ensureClockwise, ensureCounterClockwise, pointInPolygon } from "@/geometry/polygon";
 import { buildingOutlines } from "@/geometry/wallGraph";
@@ -62,7 +63,8 @@ export class HouseScene {
   private mats = new Map<string, StandardMaterial>();
   private floors = new Map<string, FloorEntry>();
   private groundNode: TransformNode | null = null;
-  private lotRef: Vec2[] | null = null;
+  /** Lot outline + road cut the ground was built for. */
+  private lotKey: string | null = null;
   private lastInput: SceneInput | null = null;
   onPick: ((t: PickTarget | null) => void) | null = null;
 
@@ -170,9 +172,11 @@ export class HouseScene {
   }
 
   private buildGround(project: Project) {
-    if (this.lotRef === project.lot.polygon && this.groundNode) return;
+    const key = JSON.stringify([project.lot.polygon, project.constraints.roadCut]);
+    if (this.lotKey === key && this.groundNode) return;
     if (this.groundNode) this.disposeNode(this.groundNode);
-    this.lotRef = project.lot.polygon;
+    this.lotKey = key;
+    const cut = roadCutGeometry(project);
     const node = new TransformNode("ground", this.scene);
     const b = bbox(project.lot.polygon);
     const size = Math.max(60, (b.maxX - b.minX) * 4, (b.maxY - b.minY) * 4);
@@ -181,11 +185,17 @@ export class HouseScene {
     ground.position = v3(c, -0.03);
     ground.material = this.mat("ground", sceneColors.ground);
     this.addMesh(ground, node, { cast: false });
-    const lot = this.extrude("lot", project.lot.polygon, 0.02);
+    const lot = this.extrude("lot", cut?.remaining ?? project.lot.polygon, 0.02);
     if (lot) {
       lot.position.y = -0.005;
       lot.material = this.mat("lot", sceneColors.lot);
       this.addMesh(lot, node, { cast: false });
+    }
+    const taken = cut && this.extrude("roadCut", cut.cut, 0.02);
+    if (taken) {
+      taken.position.y = -0.005;
+      taken.material = this.mat("roadCut", sceneColors.roadCut);
+      this.addMesh(taken, node, { cast: false });
     }
     this.groundNode = node;
   }

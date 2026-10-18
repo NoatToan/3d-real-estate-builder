@@ -50,7 +50,8 @@ export function useShortcuts(enabled: boolean) {
       if (key === "1") editor.setView("2d");
       else if (key === "2") editor.setView("split");
       else if (key === "3") editor.setView("3d");
-      else if (TOOL_KEYS[key] && !e.altKey && editor.view !== "3d") editor.setTool(TOOL_KEYS[key]);
+      else if (key === "4") editor.setView("finance");
+      else if (TOOL_KEYS[key] && !e.altKey && (editor.view === "2d" || editor.view === "split")) editor.setTool(TOOL_KEYS[key]);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

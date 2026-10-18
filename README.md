@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 3D Real Estate Builder
 
-## Getting Started
+Browser-based house designer: define a lot (trace it from a photo/scan with OCR of the dimensions, or enter it manually), draw walls, rooms, doors, windows and stairs per floor on a 2D plan, then walk around the result in 3D.
 
-First, run the development server:
+- **Stack:** Next.js (App Router, static export) · React 19 · TypeScript · Tailwind CSS v4
+- **2D plan:** Konva / react-konva · **3D viewer:** Babylon.js · **OCR:** tesseract.js (Vietnamese + English, assets served locally)
+- **State:** Zustand + Immer + zundo (undo/redo) · **Persistence:** IndexedDB (`idb-keyval`), projects can be exported/imported as `.reb.json`
+
+The **Tài chính** view (shortcut `4`) turns the drawn floors into a feasibility study: equivalent floor area (móng + floors + mái) × turnkey price, extra cost items, own capital vs. bank loan, rental income lines, and a 20-year cash flow with break-even / loan-payoff year under low / base / high scenarios. Money is in million VND; inputs are saved with the project.
+
+Lots can carry a **road cut** (giải phóng mặt bằng / lộ giới): pick the edge on the road and the depth taken; the plan and 3D show the strip in orange, and coverage, FAR, exterior walls, setbacks and the "outside the lot" check all use the land that is left.
+
+The app is fully client-side — there is no backend or database; projects are stored in the user's browser.
+
+## Getting started
+
+Requires Node ≥ 20.9 and pnpm (version pinned in `packageManager`; `corepack enable` picks it up).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install                # also copies the tesseract assets into public/tesseract
+cp .env.example .env.local  # optional, see below
+pnpm dev                    # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Dev server |
+| `pnpm build` | Static build into `out/` |
+| `pnpm start` | Serve `out/` locally |
+| `pnpm lint` / `pnpm typecheck` | ESLint / `tsc --noEmit` |
+| `pnpm test` | Unit tests (Vitest) for geometry, domain, store, persistence, OCR parsing |
+| `pnpm test:coverage` | Tests with coverage thresholds |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project layout
 
-## Learn More
+```
+src/
+  app/          routes: / (projects home), /editor
+  features/     home, lot wizard, 2D plan, 3D viewer, finance, editor shell
+  domain/       types, zod schema, factories, validation, stats, finance model
+  geometry/     polygon/segment math, wall graph, snapping, openings, stairs, hit testing
+  store/        Zustand stores (project + editor UI)
+  persistence/  IndexedDB, autosave, import/export
+  ocr/          image helpers, tesseract wrapper, dimension parsing
+  components/ui shared UI primitives
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Environment variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See `.env.example`. Only `NEXT_PUBLIC_BASE_PATH` (optional) — set it when the site is hosted under a sub-path so the OCR assets resolve.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on Vercel as a static Next.js export (`output: "export"`); install/build commands are pinned in `vercel.json`. Every merge to `main` deploys production. No env vars are required.

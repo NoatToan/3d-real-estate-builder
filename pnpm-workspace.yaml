@@ -1,0 +1,11 @@
+packages:
+  - "."
+
+# Neither install script is needed (tesseract.js: opencollective banner;
+# unrs-resolver: optional fallback binary download).
+allowBuilds:
+  tesseract.js: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.59.0

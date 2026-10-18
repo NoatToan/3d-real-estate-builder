@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import {
   SCHEMA_VERSION,
   type Constraints,
+  type FinanceInputs,
   type Floor,
   type Lot,
   type Opening,
@@ -50,8 +51,41 @@ export function defaultConstraints(edgeCount: number): Constraints {
   return {
     keepInsideLot: true,
     setback: { enabled: false, perEdge: Array.from({ length: edgeCount }, () => 0) },
+    roadCut: { enabled: false, edge: 0, depth: 0, roadWidth: null },
     allowOverhang: false,
     showStats: true,
+  };
+}
+
+/** Starting assumptions for the feasibility view (HCMC townhouse for rent, 2026 prices). */
+export function defaultFinance(): FinanceInputs {
+  return {
+    unitPrice: 5.85,
+    surchargePct: 5,
+    foundationPct: 50,
+    roofPct: 50,
+    areaOverride: null,
+    extraCosts: [
+      { id: newId("c_"), name: "Thang máy", amount: 550 },
+      { id: newId("c_"), name: "PCCC", amount: 200 },
+      { id: newId("c_"), name: "Thiết kế, giấy phép, hoàn công", amount: 180 },
+      { id: newId("c_"), name: "Phá dỡ nhà cũ", amount: 50 },
+    ],
+    contingencyPct: 10,
+    buildMonths: 12,
+    ownCapital: 3000,
+    income: [
+      { id: newId("i_"), name: "Sàn văn phòng cho thuê", quantity: 3, unitPrice: 18 },
+      { id: newId("i_"), name: "Gửi xe máy", quantity: 10, unitPrice: 0.15 },
+    ],
+    occupancyPct: 90,
+    rentGrowthPct: 5,
+    taxPct: 10,
+    opexMonthly: 8,
+    opexGrowthPct: 4,
+    loanRatePct: 10,
+    loanYears: 15,
+    scenario: "base",
   };
 }
 
@@ -81,6 +115,7 @@ export function createProject(name: string, lot: Lot = createLot()): Project {
     constraints: defaultConstraints(lot.polygon.length),
     floors: [createFloor(0)],
     defaults: { wallThickness: DEFAULT_WALL, exteriorWallThickness: DEFAULT_EXTERIOR_WALL },
+    finance: defaultFinance(),
   };
 }
 

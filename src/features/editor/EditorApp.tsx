@@ -25,6 +25,11 @@ const Viewer3D = dynamic(() => import("@/features/viewer3d/Viewer3D").then((m) =
   loading: () => <PaneMessage>Đang tải 3D…</PaneMessage>,
 });
 
+const FinanceView = dynamic(() => import("@/features/finance/FinanceView").then((m) => m.FinanceView), {
+  ssr: false,
+  loading: () => <PaneMessage>Đang tải tài chính…</PaneMessage>,
+});
+
 const LotWizard = dynamic(() => import("@/features/lot/LotWizard").then((m) => m.LotWizard), { ssr: false });
 
 function PaneMessage({ children }: { children: React.ReactNode }) {
@@ -106,30 +111,42 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
     <Col className="h-screen overflow-hidden bg-canvas">
       <EditorHeader saveStatus={saveStatus} />
       <Row className="min-h-0 flex-1">
-        <Toolbar />
-        <Col className="min-w-0 flex-1">
-          <FloorBar />
-          <Row className="min-h-0 flex-1">
-            {view !== "3d" && (
-              <Box className="relative min-w-0 flex-1">
-                <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi mặt bằng 2D" error={e} reset={r} />}>
-                  <PlanCanvas issues={issues} />
-                </ErrorBoundary>
-              </Box>
-            )}
-            {view !== "2d" && (
-              <Box className={`relative min-w-0 flex-1 ${view === "split" ? "border-l border-line" : ""}`}>
-                <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi xem 3D" error={e} reset={r} />}>
-                  <Viewer3D />
-                </ErrorBoundary>
-              </Box>
-            )}
-          </Row>
-        </Col>
-        <aside aria-label="Thuộc tính và kiểm tra" className="w-80 shrink-0 overflow-y-auto border-l border-line bg-surface">
-          <Inspector />
-          <SidePanels issues={issues} />
-        </aside>
+        {view === "finance" ? (
+          <Box className="relative min-w-0 flex-1">
+            <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi tài chính" error={e} reset={r} />}>
+              <FinanceView />
+            </ErrorBoundary>
+          </Box>
+        ) : (
+          <>
+            <Toolbar />
+            <Col className="min-w-0 flex-1">
+              <FloorBar />
+              <Row className="min-h-0 flex-1">
+                {view !== "3d" && (
+                  <Box className="relative min-w-0 flex-1">
+                    <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi mặt bằng 2D" error={e} reset={r} />}>
+                      <PlanCanvas issues={issues} />
+                    </ErrorBoundary>
+                  </Box>
+                )}
+                {view !== "2d" && (
+                  <Box className={`relative min-w-0 flex-1 ${view === "split" ? "border-l border-line" : ""}`}>
+                    <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi xem 3D" error={e} reset={r} />}>
+                      <Viewer3D />
+                    </ErrorBoundary>
+                  </Box>
+                )}
+              </Row>
+            </Col>
+          </>
+        )}
+        {view !== "finance" && (
+          <aside aria-label="Thuộc tính và kiểm tra" className="w-80 shrink-0 overflow-y-auto border-l border-line bg-surface">
+            <Inspector />
+            <SidePanels issues={issues} />
+          </aside>
+        )}
       </Row>
       {lotWizardOpen && <LotWizard onClose={() => useEditorStore.getState().setLotWizardOpen(false)} />}
     </Col>

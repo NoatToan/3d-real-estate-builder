@@ -4,6 +4,7 @@ import { openingsOverlap, wallQuad } from "@/geometry/openings";
 import { generateStair } from "@/geometry/stairs";
 import { buildingOutlines } from "@/geometry/wallGraph";
 import { buildablePolygon, computeStats } from "./stats";
+import { roadCutGeometry } from "./roadCut";
 
 export type IssueLevel = "error" | "warning" | "info";
 
@@ -37,6 +38,13 @@ export function validateProject(p: Project): Issue[] {
     });
   }
 
+  const cut = roadCutGeometry(p);
+  if (p.constraints.roadCut.enabled && p.constraints.roadCut.depth > 0 && lotOk && !cut) {
+    issues.push({ id: "roadcut-invalid", level: "error", message: "Chiều sâu giải phóng đường vượt quá thửa đất — không còn đất để xây." });
+  }
+  // Walls must stay on the land left after the road cut.
+  const site = cut?.remaining ?? lot;
+
   const buildable = buildablePolygon(p);
   if (p.constraints.setback.enabled && !buildable) {
     issues.push({ id: "setback-invalid", level: "error", message: "Khoảng lùi quá lớn — không còn diện tích xây dựng." });
@@ -48,7 +56,7 @@ export function validateProject(p: Project): Issue[] {
     const outsideSetback: string[] = [];
     for (const w of f.walls) {
       const pts = wallQuad(w);
-      if (p.constraints.keepInsideLot && lotOk && !allInside(pts, lot)) outsideLot.push(w.id);
+      if (p.constraints.keepInsideLot && lotOk && !allInside(pts, site)) outsideLot.push(w.id);
       const limitSetback = buildable && (fi === 0 || !p.constraints.allowOverhang);
       if (limitSetback && !allInside(pts, buildable)) outsideSetback.push(w.id);
     }
@@ -58,7 +66,7 @@ export function validateProject(p: Project): Issue[] {
         level: "error",
         floorId: f.id,
         entityIds: outsideLot,
-        message: `${f.name}: ${outsideLot.length} vách nằm ngoài ranh đất.`,
+        message: `${f.name}: ${outsideLot.length} vách nằm ngoài ranh đất${cut ? " hoặc trong phần giải phóng đường" : ""}.`,
       });
     if (outsideSetback.length)
       issues.push({
@@ -92,7 +100,7 @@ export function validateProject(p: Project): Issue[] {
           entityIds: [s.id],
           message: `${f.name}: cầu thang ở tầng trên cùng — hãy thêm tầng phía trên hoặc xoá thang.`,
         });
-      if (p.constraints.keepInsideLot && lotOk && !allInside(g.footprint, lot))
+      if (p.constraints.keepInsideLot && lotOk && !allInside(g.footprint, site))
         issues.push({
           id: `stair-lot-${s.id}`,
           level: "error",
