@@ -14,6 +14,7 @@ import { deleteProject, isPersistent, listProjects, loadImage, loadProject, save
 import { exportProjectFile, parseProjectFile } from "@/persistence/serialize";
 import { downloadBlob, slugify } from "@/ocr/image";
 import { NewProjectDialog } from "./NewProjectDialog";
+import { SampleGallery } from "./SampleGallery";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" });
 
@@ -152,7 +153,7 @@ export function ProjectsHome() {
                 Chưa có dự án nào
               </TextPrimary>
               <TextMuted as="p" className="text-sm">
-                Tạo dự án từ ảnh sổ đỏ hoặc nhập kích thước thửa đất.
+                Tạo dự án từ ảnh sổ đỏ, nhập kích thước thửa đất, hoặc mở một nhà mẫu bên dưới.
               </TextMuted>
             </Col>
             <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
@@ -197,6 +198,7 @@ export function ProjectsHome() {
             ))}
           </ul>
         )}
+        <SampleGallery />
       </main>
       <NewProjectDialog open={creating} onClose={() => setCreating(false)} />
     </Box>

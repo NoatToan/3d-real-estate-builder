@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import {
+  type FengShuiInputs,
   SCHEMA_VERSION,
   type Constraints,
   type FinanceInputs,
@@ -86,6 +87,7 @@ export function defaultFinance(): FinanceInputs {
     loanRatePct: 10,
     loanYears: 15,
     scenario: "base",
+    materialPrices: {},
   };
 }
 
@@ -117,8 +119,11 @@ export function createProject(name: string, lot: Lot = createLot()): Project {
     floors: [createFloor(0)],
     defaults: { wallThickness: DEFAULT_WALL, exteriorWallThickness: DEFAULT_EXTERIOR_WALL },
     finance: defaultFinance(),
+    fengShui: defaultFengShui(),
   };
 }
+
+export const defaultFengShui = (): FengShuiInputs => ({ facing: null, birthYear: null, gender: "male" });
 
 export function createWall(a: Vec2, b: Vec2, thickness = DEFAULT_WALL): Wall {
   return { id: newId("w_"), a: { ...a }, b: { ...b }, thickness };

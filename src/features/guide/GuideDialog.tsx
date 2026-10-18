@@ -38,7 +38,7 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
       }
     >
       <Col className="gap-1 text-sm text-ink">
-        <TextMuted as="p">Mọi thứ được lưu tự động trong trình duyệt. Bấm Ctrl+Z để hoàn tác bất kỳ lúc nào.</TextMuted>
+        <TextMuted as="p">Mọi thứ được lưu tự động trong trình duyệt. Bấm Ctrl+Z để hoàn tác bất kỳ lúc nào. Muốn bắt đầu nhanh thì mở một <b>nhà mẫu</b> ở trang danh sách dự án rồi sửa lại.</TextMuted>
         <H>1. Lô đất</H>
         <Text as="p">Bấm “Ranh đất” ở thanh trên cùng để tải ảnh sổ đỏ hoặc nhập kích thước. Nếu nhà bị giải phóng đường, bật mục “Giải phóng mặt bằng” trong mục “Ràng buộc” của Bảng điều khiển (cột bên trái).</Text>
         <H>2. Dựng mặt sàn nhanh</H>
@@ -53,8 +53,10 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
         <Text as="p">Bấm “Nội thất”, chọn món đồ trong danh sách ở Bảng điều khiển, rồi bấm lên mặt bằng để đặt. Đồ nội thất hiện cả ở 2D và 3D.</Text>
         <H>5. Thêm tầng, xem 3D, tài chính</H>
         <Text as="p">
-          Dấu <b>+</b> trên thanh tầng để thêm tầng (giữ tường bao). Chọn “3D” hoặc “2D + 3D” ở góc trên để xem phối cảnh; “Tài chính” để tính chi phí xây và dòng tiền cho thuê.
+          Dấu <b>+</b> trên thanh tầng để thêm tầng (giữ tường bao). Chọn “3D” hoặc “2D + 3D” ở góc trên để xem phối cảnh; “Tài chính” để tính chi phí xây và dòng tiền cho thuê. Trong Tài chính có bảng <b>bóc khối lượng & dự toán vật tư</b> (gạch, xi măng, thép, sơn, gạch lát, cửa, nhân công) đọc từ bản vẽ, sửa được đơn giá và xuất Excel.
         </Text>
+        <H>6. Phong thuỷ</H>
+        <Text as="p">Mở mục “Phong thuỷ” trong Bảng điều khiển, nhập năm sinh (âm lịch) và giới tính gia chủ, chọn hướng nhà. Ứng dụng tính cung mệnh, tô 8 cung tốt/xấu lên mặt bằng và kiểm tra hướng nhà, vị trí bếp, WC, bàn thờ, phòng ngủ, số bậc cầu thang (Sinh – Lão – Bệnh – Tử), kèm nút sửa nhanh.</Text>
         <H>Chuột & phím tắt</H>
         <Box as="article" className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
           <Text>Lăn chuột</Text>

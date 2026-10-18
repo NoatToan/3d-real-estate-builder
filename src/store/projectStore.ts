@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { current, isDraft, produce, type Draft } from "immer";
-import type { Constraints, FinanceInputs, Floor, Furniture, Id, Lot, Opening, Project, Room, Stair, Vec2, Wall } from "@/domain/types";
+import type { Constraints, FengShuiInputs, FinanceInputs, Floor, Furniture, Id, Lot, Opening, Project, Room, Stair, Vec2, Wall } from "@/domain/types";
 import { createFloor, createWall, newId } from "@/domain/factory";
 import { reconcileRooms } from "@/domain/rooms";
 import { buildablePolygon } from "@/domain/stats";
@@ -36,6 +36,7 @@ export interface ProjectState {
   setLot: (lot: Lot) => void;
   setConstraints: (patch: Partial<Constraints>) => void;
   setFinance: (patch: Partial<FinanceInputs>) => void;
+  setFengShui: (patch: Partial<FengShuiInputs>) => void;
 
   addFloor: (opts?: { copyFromId?: Id; copyWalls?: boolean }) => Id | null;
   removeFloor: (id: Id) => void;
@@ -157,6 +158,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
   setFinance: (patch) =>
     get().mutate((d) => {
       Object.assign(d.finance, patch);
+    }),
+
+  setFengShui: (patch) =>
+    get().mutate((d) => {
+      Object.assign(d.fengShui, patch);
     }),
 
   addFloor: (opts = {}) => {

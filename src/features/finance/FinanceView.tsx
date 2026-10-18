@@ -11,6 +11,7 @@ import { computeFinance, fmtTr, fmtTy, SCENARIO_ADJUST, type FinanceResult } fro
 import { fmtArea } from "@/domain/labels";
 import { FINANCE_SCENARIOS, type CostItem, type FinanceInputs, type IncomeItem } from "@/domain/types";
 import { CashflowChart, type ChartPoint } from "./CashflowChart";
+import { QuantitiesCard } from "./QuantitiesCard";
 
 type Goal = "equity" | "loan";
 
@@ -439,6 +440,9 @@ export function FinanceView() {
               <MonthTable r={r} />
             </Card>
           </Box>
+          <Card title="Bóc khối lượng & dự toán vật tư">
+            <QuantitiesCard />
+          </Card>
           <details className="rounded-lg border border-line bg-surface px-3 py-2">
             <summary className="cursor-pointer text-sm font-semibold text-ink">Bảng dòng tiền từng năm</summary>
             <Box className="mt-2 overflow-x-auto">

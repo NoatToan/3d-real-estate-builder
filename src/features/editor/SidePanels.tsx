@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { ChartColumn, CircleAlert, Eye, Info, Ruler, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ChartColumn, CircleAlert, Compass, Eye, Info, Ruler, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Box, Col, Row, Text, TextFaint, TextMuted } from "@/components/ui/BasePrimitives";
 import { NumberField, SelectField, Toggle } from "@/components/ui/Fields";
 import { Section } from "@/components/ui/Section";
+import { FengShuiPanel } from "@/features/fengshui/FengShuiPanel";
 import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
 import type { Issue } from "@/domain/validation";
@@ -209,6 +210,9 @@ export function SidePanels({ issues }: { issues: Issue[] }) {
           <Stats />
         </Section>
       )}
+      <Section title="Phong thuỷ" icon={<Compass size={14} />} open={panels.fengShui} onToggle={() => toggle("fengShui")}>
+        <FengShuiPanel />
+      </Section>
       <Section title="Ràng buộc (tuỳ chọn)" icon={<Ruler size={14} />} open={panels.constraints} onToggle={() => toggle("constraints")}>
         <Constraints />
       </Section>

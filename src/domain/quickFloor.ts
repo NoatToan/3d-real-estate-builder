@@ -1,4 +1,7 @@
-import type { Furniture, FurnitureKind, Opening, Project, RoomType, Stair, Vec2, Wall } from "./types";
+import type { Floor, Furniture, FurnitureKind, Opening, Project, RoomType, Stair, Vec2, Wall } from "./types";
+import { reconcileRooms } from "./rooms";
+import { clampOpening } from "@/geometry/openings";
+import { pointInPolygon } from "@/geometry/polygon";
 import { createOpening, createStair, createWall } from "./factory";
 import { createFurniture, furnitureSpec } from "./furniture";
 import { cutLineOrigin, lineSpanInside, siteLotPolygon } from "./roadCut";
@@ -303,4 +306,21 @@ export function planQuickFloor(outline: readonly Vec2[], zones: readonly QuickZo
   });
 
   return { walls, openings, stairs, furniture, labels, depth: dMax - dMin, width: full[1] - full[0] };
+}
+
+/** Floor with a generated plan applied (pure counterpart of the store's applyQuickFloor). */
+export function floorFromQuickPlan(floor: Floor, plan: QuickFloorPlan): Floor {
+  const byId = new Map(plan.walls.map((w) => [w.id, w]));
+  const rooms = reconcileRooms([], plan.walls).map((r) => {
+    const l = plan.labels.find((x) => pointInPolygon(x.at, r.polygon));
+    return l ? { ...r, name: l.name, type: l.type } : r;
+  });
+  return {
+    ...floor,
+    walls: plan.walls,
+    openings: plan.openings.filter((o) => byId.has(o.wallId)).map((o) => clampOpening(o, byId.get(o.wallId)!)),
+    stairs: plan.stairs,
+    furniture: plan.furniture,
+    rooms,
+  };
 }

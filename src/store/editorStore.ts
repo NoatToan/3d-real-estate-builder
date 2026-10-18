@@ -23,10 +23,10 @@ export interface EditorState {
   roomCreatesWalls: boolean;
 
   snap: { enabled: boolean; grid: number; angleStep: number };
-  show: { ghostBelow: boolean; dimensions: boolean; lotImage: boolean; grid: boolean; roomLabels: boolean };
+  show: { ghostBelow: boolean; dimensions: boolean; lotImage: boolean; grid: boolean; roomLabels: boolean; fengShui: boolean };
   /** cutaway: the top visible floor shows walls 1.2 m high so its rooms and furniture can be seen. */
   viewer: { hiddenFloorIds: Id[]; explode: number; upToActive: boolean; roof: boolean; cutaway: boolean };
-  panels: { guide: boolean; issues: boolean; stats: boolean; constraints: boolean; display: boolean };
+  panels: { guide: boolean; issues: boolean; stats: boolean; constraints: boolean; display: boolean; fengShui: boolean };
   /** Incremented to ask the 2D/3D views to zoom to fit. */
   fitRequest: number;
   lotWizardOpen: boolean;
@@ -68,9 +68,9 @@ const initial = {
   wallThickness: null,
   roomCreatesWalls: true,
   snap: { enabled: true, grid: 0.05, angleStep: 15 },
-  show: { ghostBelow: true, dimensions: true, lotImage: false, grid: true, roomLabels: true },
+  show: { ghostBelow: true, dimensions: true, lotImage: false, grid: true, roomLabels: true, fengShui: true },
   viewer: { hiddenFloorIds: [] as Id[], explode: 0, upToActive: false, roof: false, cutaway: true },
-  panels: { guide: true, issues: true, stats: true, constraints: false, display: false },
+  panels: { guide: true, issues: true, stats: true, constraints: false, display: false, fengShui: false },
   fitRequest: 0,
   lotWizardOpen: false,
   guideOpen: false,

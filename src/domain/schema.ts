@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { FINANCE_SCENARIOS, FURNITURE_KINDS, ROOM_TYPES, SCHEMA_VERSION, STAIR_TYPES, type Project } from "./types";
-import { defaultFinance } from "./factory";
+import { DIRECTIONS, FINANCE_SCENARIOS, FURNITURE_KINDS, ROOM_TYPES, SCHEMA_VERSION, STAIR_TYPES, type Project } from "./types";
+import { defaultFengShui, defaultFinance } from "./factory";
 
 const num = z.number().refine(Number.isFinite, "Giá trị số không hợp lệ");
 const pos = num.refine((n) => n > 0, "Giá trị phải lớn hơn 0");
@@ -105,6 +105,7 @@ const finance = z.object({
   loanRatePct: num,
   loanYears: num,
   scenario: z.enum(FINANCE_SCENARIOS),
+  materialPrices: z.record(z.string().max(40), num).default({}),
 });
 
 export const projectSchema = z.object({
@@ -127,6 +128,9 @@ export const projectSchema = z.object({
   defaults: z.object({ wallThickness: pos, exteriorWallThickness: pos }),
   // Added after v1 shipped: older documents get the default assumptions.
   finance: finance.default(defaultFinance),
+  fengShui: z
+    .object({ facing: z.enum(DIRECTIONS).nullable(), birthYear: z.number().int().min(1900).max(2100).nullable(), gender: z.enum(["male", "female"]) })
+    .default(defaultFengShui),
 });
 
 export const EXPORT_FORMAT = "real-estate-builder";

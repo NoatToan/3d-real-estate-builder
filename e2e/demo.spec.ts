@@ -161,14 +161,55 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await page.keyboard.press("Escape");
   await expect(guide).toBeHidden();
 
-  // 12. Finance
+  // 12. Phong thuỷ: owner's year + house facing → cung mệnh, 8 sectors on the plan, checks with fixes
+  await page.getByRole("radio", { name: "2D", exact: true }).click();
+  await page.getByRole("button", { name: "Phong thuỷ" }).click();
+  const year = page.getByLabel("Năm sinh gia chủ (âm lịch)");
+  await year.fill("1990");
+  await year.press("Enter");
+  await page.getByRole("radiogroup", { name: "Hướng nhà" }).getByRole("radio", { name: "Đông Nam", exact: true }).click();
+  await expect(page.getByText("Cung Khảm · Đông tứ mệnh")).toBeVisible();
+  const checks = page.getByRole("list", { name: "Kết quả phong thuỷ" });
+  await expect(checks).toContainText("Hướng nhà Đông Nam: Sinh Khí");
+  const fixes = page.getByRole("button", { name: /Đổi thành \d+ bậc/ });
+  const before = await fixes.count();
+  if (before > 0) {
+    await fixes.first().click();
+    await expect(fixes).toHaveCount(before - 1);
+  }
+  await page.getByRole("tab", { name: /Tầng 1/ }).first().click();
+  await shot(page, "15-feng-shui");
+
+  // 13. Finance + quantities read off the drawing, exported to Excel
   await page.getByRole("radio", { name: "Tài chính" }).click();
   await expect(page.getByText(/Diện tích quy đổi/).first()).toBeVisible();
-  await shot(page, "15-finance");
+  await shot(page, "16-finance");
+  const boq = page.getByRole("table", { name: "Dự toán vật tư" });
+  await boq.scrollIntoViewIfNeeded();
+  await expect(boq).toContainText("Gạch ống");
+  await expect(boq).toContainText("Tổng dự toán");
+  const [xlsx] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Xuất Excel" }).click()]);
+  expect(xlsx.suggestedFilename()).toMatch(/du-toan\.xlsx$/);
+  await page.waitForTimeout(300);
+  await shot(page, "17-quantities");
 
   if (capture) {
     const video = page.video();
     await page.close();
     await video?.saveAs(path.join(OUT, "tour.webm"));
   }
+});
+
+test("nhà mẫu: mở một mẫu dựng sẵn và sửa tiếp", async ({ page }) => {
+  await page.goto("/");
+  const gallery = page.getByRole("region", { name: "Nhà mẫu" });
+  await expect(gallery.getByRole("listitem")).toHaveCount(5);
+  await gallery.scrollIntoViewIfNeeded();
+  await shot(page, "18-samples");
+  await gallery.getByRole("button", { name: "Dùng mẫu Nhà tóp hậu 5 tầng cho thuê" }).click();
+  await page.waitForURL(/\/editor\/\?id=/);
+  await expect(page.getByRole("tab", { name: /Tầng 5/ })).toBeVisible();
+  await page.getByRole("radio", { name: "2D + 3D", exact: true }).click();
+  await page.waitForTimeout(2500);
+  await shot(page, "19-sample-open");
 });
