@@ -8,6 +8,8 @@ import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
 import { exportRegistry } from "@/features/plan/hooks";
 import type { HouseScene, SceneInput } from "./sceneBuilder";
+import { ObjectActions, type ActionAnchor } from "@/features/editor/ObjectActions";
+import { entityOutline, findEntity } from "@/domain/selection";
 
 /** Grid (m) furniture and stairs snap to while dragged in 3D. */
 const DRAG_SNAP = 0.05;
@@ -32,6 +34,12 @@ export function Viewer3D() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<HouseScene | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actions, setActions] = useState<{ anchor: ActionAnchor; width: number; height: number } | null>(null);
+  const selFloor = useProjectStore((s) => {
+    const fid = useEditorStore.getState().selection?.floorId;
+    return fid ? s.project?.floors.find((f) => f.id === fid) : undefined;
+  });
+  useEditorStore((s) => s.selection);
   const cutaway = useEditorStore((s) => s.viewer.cutaway);
   const upToActive = useEditorStore((s) => s.viewer.upToActive);
 
@@ -89,8 +97,34 @@ export function Viewer3D() {
         };
         hs.engine.onContextLostObservable.add(() => setError("Mất ngữ cảnh WebGL — hãy tải lại trang."));
 
+        // Screen box of the selection, so the floating actions bar sits next to it in 3D.
+        let araf = 0;
+        const placeActions = () => {
+          araf = 0;
+          const sel = useEditorStore.getState().selection;
+          const floor = sel && useProjectStore.getState().project?.floors.find((f) => f.id === sel.floorId);
+          if (!sel || !floor || useEditorStore.getState().viewer.hiddenFloorIds.includes(floor.id)) return setActions(null);
+          const pts: { x: number; y: number }[] = [];
+          for (const id of sel.ids) {
+            const e = findEntity(floor, id);
+            if (!e) continue;
+            const o = entityOutline(floor, e);
+            for (const p of o.points) pts.push(hs.toScreen(floor.id, p, 0), hs.toScreen(floor.id, p, o.height));
+          }
+          if (!pts.length) return setActions(null);
+          const xs = pts.map((p) => p.x);
+          const ys = pts.map((p) => p.y);
+          setActions({ anchor: { x: (Math.min(...xs) + Math.max(...xs)) / 2, top: Math.min(...ys), bottom: Math.max(...ys) }, width: canvas.clientWidth, height: canvas.clientHeight });
+        };
+        const scheduleActions = () => {
+          if (!araf) araf = requestAnimationFrame(placeActions);
+        };
+        hs.camera.onViewMatrixChangedObservable.add(scheduleActions);
+        cleanups.push(() => cancelAnimationFrame(araf));
+
         const push = () => {
           raf = 0;
+          scheduleActions();
           const input = readInput();
           if (input) {
             try {
@@ -126,7 +160,7 @@ export function Viewer3D() {
               const f = p?.floors.find((x) => x.id === floorId)?.furniture.find((x) => x.kind === kind);
               if (!f || !floorId) return null;
               hs.scene.render();
-              return { id: f.id, x: f.x, y: f.y, screen: hs.toScreen(floorId, f, f.height * 0.8) };
+              return { id: f.id, x: f.x, y: f.y, rotation: f.rotation, width: f.width, screen: hs.toScreen(floorId, f, f.height * 0.8) };
             },
           };
           cleanups.push(() => delete (window as unknown as { __reb3d?: unknown }).__reb3d);
@@ -179,6 +213,7 @@ export function Viewer3D() {
           <Layers size={16} />
         </IconButton>
       </Row>
+      {selFloor && actions && <ObjectActions floor={selFloor} anchor={actions.anchor} bounds={actions} />}
       <TextMuted className="pointer-events-none absolute bottom-2 left-2 rounded bg-surface/80 px-2 py-0.5 text-xs">
         Kéo nền: xoay · Kéo nội thất / cầu thang: di chuyển · Chuột phải: cuộn · Lăn: phóng to · Nhấp: chọn
       </TextMuted>
