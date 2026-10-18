@@ -173,6 +173,7 @@ function Display() {
       {hasImage && <Toggle label="Ảnh sổ đỏ làm nền" checked={show.lotImage} onChange={(lotImage) => ed.setShow({ lotImage })} />}
       <TextFaint className="mt-2 text-caption font-semibold uppercase">Xem 3D</TextFaint>
       <Toggle label="Chỉ hiện đến tầng đang chọn" checked={viewer.upToActive} onChange={(upToActive) => ed.setViewer({ upToActive })} />
+      <Toggle label="Hạ tường tầng trên cùng" hint="Tường cao 1,2 m để nhìn thấy phòng và nội thất" checked={viewer.cutaway} onChange={(cutaway) => ed.setViewer({ cutaway })} />
       <Toggle label="Mái bằng trên cùng" checked={viewer.roof} onChange={(roof) => ed.setViewer({ roof })} />
       <label className="mt-1 text-sm text-ink" htmlFor="explode">
         Tách tầng: {viewer.explode.toFixed(1).replace(".", ",")} m

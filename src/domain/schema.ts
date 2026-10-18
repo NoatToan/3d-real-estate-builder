@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FINANCE_SCENARIOS, ROOM_TYPES, SCHEMA_VERSION, STAIR_TYPES, type Project } from "./types";
+import { FINANCE_SCENARIOS, FURNITURE_KINDS, ROOM_TYPES, SCHEMA_VERSION, STAIR_TYPES, type Project } from "./types";
 import { defaultFinance } from "./factory";
 
 const num = z.number().refine(Number.isFinite, "Giá trị số không hợp lệ");
@@ -45,6 +45,18 @@ const stair = z.object({
   sweep: num,
 });
 
+const furniture = z.object({
+  id: z.string().min(1),
+  kind: z.enum(FURNITURE_KINDS),
+  name: z.string().max(120),
+  x: num,
+  y: num,
+  rotation: num,
+  width: pos,
+  depth: pos,
+  height: pos,
+});
+
 const floor = z.object({
   id: z.string().min(1),
   name: z.string().max(120),
@@ -54,6 +66,7 @@ const floor = z.object({
   rooms: z.array(room),
   openings: z.array(opening),
   stairs: z.array(stair),
+  furniture: z.array(furniture).max(500).default([]),
 });
 
 const lot = z.object({

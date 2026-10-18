@@ -10,6 +10,7 @@ import { useEditorStore } from "@/store/editorStore";
 import type { Floor, Vec2, Wall } from "@/domain/types";
 import type { Issue } from "@/domain/validation";
 import { createOpening, createStair, createWall, newId } from "@/domain/factory";
+import { createFurniture } from "@/domain/furniture";
 import { buildablePolygon } from "@/domain/stats";
 import { roadCutGeometry } from "@/domain/roadCut";
 import { fmtLength } from "@/domain/labels";
@@ -23,13 +24,30 @@ import { pointAlongWall, wallLength } from "@/geometry/openings";
 import { add, dist, normalize, round, samePoint, scale as vscale, sub } from "@/geometry/vec";
 import { isTypingTarget } from "@/features/editor/useShortcuts";
 import { exportRegistry, activeFloorOf, useElementSize, useLotImage } from "./hooks";
-import { flat, GridShape, Handle, Label, LotShape, openingCover, RoomsShape, StairGlyph, StairsShape, VoidsShape, WallDimensions, WallsShape, type Viewport } from "./PlanShapes";
+import {
+  flat,
+  FurnitureGlyph,
+  FurnitureShape,
+  GridShape,
+  Handle,
+  Label,
+  LotShape,
+  openingCover,
+  RoomsShape,
+  StairGlyph,
+  StairsShape,
+  VoidsShape,
+  WallDimensions,
+  WallsShape,
+  type Viewport,
+} from "./PlanShapes";
 
 type Drag =
   | { kind: "pan"; startScreen: Vec2; startVp: Viewport }
   | { kind: "endpoint"; current: Vec2; began: boolean }
   | { kind: "wall"; startWorld: Vec2; a0: Vec2; b0: Vec2; curA: Vec2; curB: Vec2; began: boolean }
   | { kind: "stair"; id: string; startWorld: Vec2; x0: number; y0: number; began: boolean }
+  | { kind: "furniture"; id: string; startWorld: Vec2; x0: number; y0: number; began: boolean }
   | { kind: "opening"; id: string; wallId: string; began: boolean }
   | { kind: "roomVertex"; roomId: string; index: number; polygon: Vec2[]; began: boolean };
 
@@ -83,6 +101,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
   const snapCfg = useEditorStore((s) => s.snap);
   const show = useEditorStore((s) => s.show);
   const stairType = useEditorStore((s) => s.stairType);
+  const furnitureKind = useEditorStore((s) => s.furnitureKind);
   const wallThickness = useEditorStore((s) => s.wallThickness);
   const roomCreatesWalls = useEditorStore((s) => s.roomCreatesWalls);
   const fitRequest = useEditorStore((s) => s.fitRequest);
@@ -100,6 +119,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
   const [measure, setMeasure] = useState<{ a: Vec2; b?: Vec2 } | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [stairRot, setStairRot] = useState(0);
+  const [furnitureRot, setFurnitureRot] = useState(0);
   const [lengthText, setLengthText] = useState<string | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const drag = useRef<Drag | null>(null);
@@ -274,9 +294,12 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
       }
       if (e.key.toLowerCase() === "r" && !e.ctrlKey && !e.metaKey) {
         if (tool === "stair") setStairRot((r) => (r + 90) % 360);
+        else if (tool === "furniture") setFurnitureRot((r) => (r + 90) % 360);
         else if (floor && selectedIds.size === 1) {
           const s = floor.stairs.find((x) => selectedIds.has(x.id));
           if (s) store().updateStair(floor.id, s.id, { rotation: s.rotation + 90 });
+          const fu = floor.furniture.find((x) => selectedIds.has(x.id));
+          if (fu) store().updateFurniture(floor.id, fu.id, { rotation: fu.rotation + 90 });
         }
         return;
       }
@@ -287,6 +310,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
         const s = store();
         s.begin();
         for (const st of floor.stairs) if (selectedIds.has(st.id)) s.updateStair(floor.id, st.id, { x: st.x + d.x, y: st.y + d.y });
+        for (const fu of floor.furniture) if (selectedIds.has(fu.id)) s.updateFurniture(floor.id, fu.id, { x: fu.x + d.x, y: fu.y + d.y });
         for (const w of floor.walls) {
           if (!selectedIds.has(w.id)) continue;
           const cur = s.project!.floors[index].walls.find((x) => x.id === w.id);
@@ -360,6 +384,14 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
         editor().setTool("select");
         return;
       }
+      case "furniture": {
+        const p = snapPoint(pt.world, snapCtx(null)).point;
+        const f = createFurniture(furnitureKind, p, furnitureRot);
+        store().addFurniture(floor.id, f);
+        editor().select({ floorId: floor.id, ids: [f.id] });
+        editor().setTool("select");
+        return;
+      }
       case "measure": {
         const p = snapPoint(pt.world, snapCtx(measure && !measure.b ? measure.a : null)).point;
         setMeasure(!measure || measure.b ? { a: p } : { a: measure.a, b: p });
@@ -398,6 +430,9 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
           if (hit.kind === "wall") {
             const w = floor.walls.find((x) => x.id === hit.id)!;
             drag.current = { kind: "wall", startWorld: pt.world, a0: w.a, b0: w.b, curA: w.a, curB: w.b, began: false };
+          } else if (hit.kind === "furniture") {
+            const f = floor.furniture.find((x) => x.id === hit.id)!;
+            drag.current = { kind: "furniture", id: f.id, startWorld: pt.world, x0: f.x, y0: f.y, began: false };
           } else if (hit.kind === "stair") {
             const s = floor.stairs.find((x) => x.id === hit.id)!;
             drag.current = { kind: "stair", id: s.id, startWorld: pt.world, x0: s.x, y0: s.y, began: false };
@@ -465,6 +500,12 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
           s.updateStair(floor.id, d.id, { x: d.x0 + delta.x, y: d.y0 + delta.y });
           return;
         }
+        case "furniture": {
+          const delta = gridDelta(sub(pt.world, d.startWorld));
+          ensureBegun();
+          s.updateFurniture(floor.id, d.id, { x: d.x0 + delta.x, y: d.y0 + delta.y });
+          return;
+        }
         case "opening": {
           const w = floor.walls.find((x) => x.id === d.wallId);
           if (!w) return;
@@ -489,9 +530,9 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
     if (tool === "select") {
       setHoverId(hitTest(floor, pt.world, 6 / vp.scale)?.id ?? null);
       setCursor(null);
-    } else if (tool === "wall" || tool === "room" || tool === "measure" || tool === "stair") {
+    } else if (tool === "wall" || tool === "room" || tool === "measure" || tool === "stair" || tool === "furniture") {
       const anchor = tool === "measure" ? (measure && !measure.b ? measure.a : null) : draft.length ? draft[draft.length - 1] : null;
-      setCursor(snapPoint(pt.world, snapCtx(tool === "stair" ? null : anchor, undefined, draft)));
+      setCursor(snapPoint(pt.world, snapCtx(tool === "stair" || tool === "furniture" ? null : anchor, undefined, draft)));
     } else {
       setCursor(null);
     }
@@ -538,6 +579,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
         })()
       : null;
   const previewStair = tool === "stair" && cursorPt ? createStair(stairType, cursorPt, stairRot) : null;
+  const previewFurniture = tool === "furniture" && cursorPt ? createFurniture(furnitureKind, cursorPt, furnitureRot) : null;
   const draftLen = draft.length && cursorPt ? dist(draft[draft.length - 1], cursorPt) : 0;
   const imgTransform = (() => {
     const t = project.lot.trace;
@@ -587,6 +629,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
             <RoomsShape rooms={floor.rooms} selected={selectedIds} hoverId={hoverId} showLabels={show.roomLabels} scale={vp.scale} />
             <VoidsShape below={below} scale={vp.scale} />
             <StairsShape floor={floor} selected={selectedIds} hoverId={hoverId} scale={vp.scale} />
+            <FurnitureShape items={floor.furniture} selected={selectedIds} hoverId={hoverId} scale={vp.scale} />
             <WallsShape walls={floor.walls} openings={floor.openings} selected={selectedIds} errors={errorIds} hoverId={hoverId} />
             {show.dimensions && <WallDimensions walls={floor.walls} scale={vp.scale} />}
           </Layer>
@@ -613,6 +656,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
             {previewOpening && <Line points={flat(openingCover(previewOpening.o, previewOpening.w))} closed fill={tool === "door" ? C.door : C.window} opacity={0.5} />}
             {previewOpening && <Circle x={pointAlongWall(previewOpening.w, previewOpening.o.offset).x} y={pointAlongWall(previewOpening.w, previewOpening.o.offset).y} radius={3 / vp.scale} fill={C.snap} />}
             {previewStair && <StairGlyph stair={previewStair} rise={floor.height} scale={vp.scale} preview />}
+            {previewFurniture && <FurnitureGlyph item={previewFurniture} scale={vp.scale} preview />}
 
             {measure && (measure.b || cursorPt) && (
               <>

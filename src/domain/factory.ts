@@ -99,6 +99,7 @@ export function createFloor(index: number, over: Partial<Floor> = {}): Floor {
     rooms: [],
     openings: [],
     stairs: [],
+    furniture: [],
     ...over,
   };
 }

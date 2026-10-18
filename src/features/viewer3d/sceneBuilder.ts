@@ -10,6 +10,7 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder";
+import { CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder";
 import { ExtrudePolygon } from "@babylonjs/core/Meshes/Builders/polygonBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
@@ -22,6 +23,7 @@ import type { Floor, Project, Stair, Vec2 } from "@/domain/types";
 import { ROOM_TYPE_COLORS } from "@/domain/labels";
 import { floorElevations } from "@/domain/stats";
 import { roadCutGeometry } from "@/domain/roadCut";
+import { furnitureSpec, furnitureToPlan } from "@/domain/furniture";
 import { sceneColors } from "@/theme/tokens";
 import { bbox, centroid, ensureClockwise, ensureCounterClockwise, pointInPolygon } from "@/geometry/polygon";
 import { buildingOutlines } from "@/geometry/wallGraph";
@@ -37,6 +39,7 @@ export interface SceneInput {
   explode: number;
   upToActive: boolean;
   roof: boolean;
+  cutaway: boolean;
 }
 
 export interface PickTarget {
@@ -49,6 +52,7 @@ interface FloorEntry {
   belowStairs: readonly Stair[] | null;
   selKey: string;
   roof: boolean;
+  cut: boolean;
   node: TransformNode;
 }
 
@@ -200,8 +204,12 @@ export class HouseScene {
     this.groundNode = node;
   }
 
-  private buildFloor(floor: Floor, below: Floor | null, selected: ReadonlySet<string>, roof: boolean): TransformNode {
+  private buildFloor(floor: Floor, below: Floor | null, selected: ReadonlySet<string>, roof: boolean, cut: boolean): TransformNode {
     const node = new TransformNode(`floor-${floor.id}`, this.scene);
+    // Walls and openings hang off their own node so a cutaway can squash them to 1.2 m.
+    const wallNode = new TransformNode(`walls-${floor.id}`, this.scene);
+    wallNode.parent = node;
+    if (cut) wallNode.scaling.y = Math.min(1, 1.2 / floor.height);
     const outlines = buildingOutlines(floor.walls);
     const voids = below ? below.stairs.map((s) => generateStair(s, below.height).footprint) : [];
 
@@ -255,7 +263,7 @@ export class HouseScene {
         box.position = v3({ x: w.a.x + dir.x * mid, y: w.a.y + dir.y * mid }, p.bottom + h / 2);
         box.rotation.y = angle;
         box.material = selected.has(w.id) ? wallSel : wallMat;
-        this.addMesh(box, node, { pick: { floorId: floor.id, id: w.id } });
+        this.addMesh(box, wallNode, { pick: { floorId: floor.id, id: w.id } });
       });
     }
 
@@ -274,7 +282,7 @@ export class HouseScene {
       panel.position = v3(c, o.sill + h / 2);
       panel.rotation.y = angle;
       panel.material = selected.has(o.id) ? wallSel : isDoor ? this.mat("door", sceneColors.door) : this.mat("glass", sceneColors.glass, 0.4);
-      this.addMesh(panel, node, { cast: isDoor, pick: { floorId: floor.id, id: o.id } });
+      this.addMesh(panel, wallNode, { cast: isDoor, pick: { floorId: floor.id, id: o.id } });
     }
 
     // Stairs rising from this floor.
@@ -295,6 +303,31 @@ export class HouseScene {
         col.material = mat;
         this.addMesh(col, node, { pick: { floorId: floor.id, id: s.id } });
       }
+    }
+
+    // Furniture: each catalog part becomes a box, cylinder or sphere.
+    for (const f of floor.furniture) {
+      const spec = furnitureSpec(f.kind);
+      const angle = (f.rotation * Math.PI) / 180;
+      spec.parts.forEach((p, k) => {
+        const w = Math.max(0.01, (p.u1 - p.u0) * f.width);
+        const d = Math.max(0.01, (p.v1 - p.v0) * f.depth);
+        const h = Math.max(0.01, (p.z1 - p.z0) * f.height);
+        const c = furnitureToPlan(f, ((p.u0 + p.u1) / 2 - 0.5) * f.width, ((p.v0 + p.v1) / 2 - 0.5) * f.depth);
+        const name = `fu-${f.id}-${k}`;
+        const mesh =
+          p.shape === "cylinder"
+            ? CreateCylinder(name, { diameter: 1, height: h, tessellation: 20 }, this.scene)
+            : p.shape === "sphere"
+              ? CreateSphere(name, { diameter: 1, segments: 12 }, this.scene)
+              : CreateBox(name, { width: w, height: h, depth: d }, this.scene);
+        if (p.shape === "cylinder") mesh.scaling.set(w, 1, d);
+        if (p.shape === "sphere") mesh.scaling.set(w, h, d);
+        mesh.position = v3(c, p.z0 * f.height + h / 2);
+        mesh.rotation.y = angle;
+        mesh.material = selected.has(f.id) ? wallSel : this.mat("fu", p.color ?? spec.color, p.opacity ?? 1);
+        this.addMesh(mesh, node, { cast: (p.opacity ?? 1) === 1, pick: { floorId: floor.id, id: f.id } });
+      });
     }
 
     for (const m of node.getChildMeshes()) m.freezeWorldMatrix();
@@ -319,12 +352,13 @@ export class HouseScene {
     project.floors.forEach((f, i) => {
       seen.add(f.id);
       const below = i > 0 ? project.floors[i - 1] : null;
-      const selKey = [...input.selectedIds].filter((id) => f.walls.some((w) => w.id === id) || f.openings.some((o) => o.id === id) || f.stairs.some((s) => s.id === id)).sort().join(",");
-      const roof = input.roof && i === topVisible;
+      const selKey = [...input.selectedIds].filter((id) => f.walls.some((w) => w.id === id) || f.openings.some((o) => o.id === id) || f.stairs.some((s) => s.id === id) || f.furniture.some((x) => x.id === id)).sort().join(",");
+      const roof = input.roof && !input.cutaway && i === topVisible;
+      const cut = input.cutaway && i === topVisible;
       let entry = this.floors.get(f.id);
-      if (!entry || entry.floorRef !== f || entry.belowStairs !== (below?.stairs ?? null) || entry.selKey !== selKey || entry.roof !== roof) {
+      if (!entry || entry.floorRef !== f || entry.belowStairs !== (below?.stairs ?? null) || entry.selKey !== selKey || entry.roof !== roof || entry.cut !== cut) {
         if (entry) this.disposeNode(entry.node);
-        entry = { floorRef: f, belowStairs: below?.stairs ?? null, selKey, roof, node: this.buildFloor(f, below, input.selectedIds, roof) };
+        entry = { floorRef: f, belowStairs: below?.stairs ?? null, selKey, roof, cut, node: this.buildFloor(f, below, input.selectedIds, roof, cut) };
         this.floors.set(f.id, entry);
       }
       entry.node.position.y = elevations[i] + i * input.explode;
@@ -356,7 +390,7 @@ export class HouseScene {
     this.camera.setTarget(v3({ x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 }, height / 3));
     this.camera.radius = span * 1.9;
     this.camera.alpha = -Math.PI / 2.6;
-    this.camera.beta = Math.PI / 3.2;
+    this.camera.beta = Math.PI / 4;
     this.requestRender();
   }
 

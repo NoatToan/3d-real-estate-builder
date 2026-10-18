@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { RotateCw, Scissors, Trash2, TriangleAlert } from "lucide-react";
+import { Copy, RotateCw, Scissors, Trash2, TriangleAlert } from "lucide-react";
 import { Box, Col, Row, Text, TextFaint, TextMuted } from "@/components/ui/BasePrimitives";
 import { Button } from "@/components/ui/Button";
 import { NumberField, SelectField, TextField, Toggle } from "@/components/ui/Fields";
@@ -10,7 +10,9 @@ import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useActiveFloor } from "@/features/plan/hooks";
 import { OPENING_LABELS, ROOM_TYPE_LABELS, STAIR_TYPE_LABELS, fmtArea } from "@/domain/labels";
-import { ROOM_TYPES, STAIR_TYPES, type Floor, type Opening, type Room, type Stair, type Wall } from "@/domain/types";
+import { ROOM_TYPES, STAIR_TYPES, type Floor, type Furniture, type Opening, type Room, type Stair, type Wall } from "@/domain/types";
+import { createFurniture, furnitureSpec } from "@/domain/furniture";
+import { FurnitureCatalog, FurnitureIcon } from "@/features/furniture/FurnitureCatalog";
 import { roomNetArea } from "@/domain/rooms";
 import { area } from "@/geometry/polygon";
 import { generateStair } from "@/geometry/stairs";
@@ -164,6 +166,48 @@ function StairInspector({ floor, stair, isTop }: { floor: Floor; stair: Stair; i
   );
 }
 
+function FurnitureInspector({ floor, item }: { floor: Floor; item: Furniture }) {
+  const s = useProjectStore.getState();
+  const up = (patch: Partial<Furniture>) => s.updateFurniture(floor.id, item.id, patch);
+  const spec = furnitureSpec(item.kind);
+  return (
+    <Panel title="Nội thất" actions={<DeleteButton floorId={floor.id} ids={[item.id]} />}>
+      <Row className="items-center gap-2">
+        <FurnitureIcon spec={spec} size={44} />
+        <TextField className="flex-1" label="Tên" value={item.name} onCommit={(name) => up({ name })} />
+      </Row>
+      <Grid2>
+        <NumberField label="Rộng" value={item.width} min={0.1} max={20} suffix="m" onCommit={(n) => n && up({ width: n })} />
+        <NumberField label="Sâu" value={item.depth} min={0.1} max={20} suffix="m" onCommit={(n) => n && up({ depth: n })} />
+        <NumberField label="Cao" value={item.height} min={0.05} max={10} suffix="m" onCommit={(n) => n && up({ height: n })} />
+        <NumberField label="Góc xoay" value={item.rotation} min={-360} max={720} step={15} decimals={0} suffix="°" onCommit={(n) => n != null && up({ rotation: n })} />
+      </Grid2>
+      <Row className="flex-wrap gap-1">
+        <Button size="sm" icon={<RotateCw size={14} />} onClick={() => up({ rotation: item.rotation + 90 })}>
+          Xoay 90°
+        </Button>
+        <Button
+          size="sm"
+          icon={<Copy size={14} />}
+          onClick={() => {
+            const copy = { ...createFurniture(item.kind, { x: item.x + 0.3, y: item.y + 0.3 }, item.rotation), name: item.name, width: item.width, depth: item.depth, height: item.height };
+            s.addFurniture(floor.id, copy);
+            useEditorStore.getState().select({ floorId: floor.id, ids: [copy.id] });
+          }}
+        >
+          Nhân bản
+        </Button>
+        <Button size="sm" onClick={() => up({ width: spec.width, depth: spec.depth, height: spec.height })}>
+          Kích thước mẫu
+        </Button>
+      </Row>
+      <TextFaint as="p" className="text-xs">
+        Kéo trên mặt bằng để di chuyển, phím mũi tên để dịch từng chút, R để xoay.
+      </TextFaint>
+    </Panel>
+  );
+}
+
 function RoomInspector({ floor, room }: { floor: Floor; room: Room }) {
   const s = useProjectStore.getState();
   return (
@@ -215,6 +259,7 @@ function ToolOptions() {
       )}
       {tool === "stair" && <SelectField label="Kiểu thang" value={stairType} options={STAIR_TYPES.map((t) => ({ value: t, label: STAIR_TYPE_LABELS[t] }))} onChange={ed.setStairType} />}
       {tool === "room" && <Toggle label="Tự tạo vách theo cạnh phòng" checked={roomCreatesWalls} onChange={ed.setRoomCreatesWalls} />}
+      {tool === "furniture" && <FurnitureCatalog />}
     </Panel>
   );
 }
@@ -275,6 +320,8 @@ export function Inspector() {
     if (opening) return <OpeningInspector floor={floor} opening={opening} />;
     const stair = floor.stairs.find((s) => s.id === id);
     if (stair) return <StairInspector floor={floor} stair={stair} isTop={index === floors - 1} />;
+    const item = floor.furniture.find((x) => x.id === id);
+    if (item) return <FurnitureInspector floor={floor} item={item} />;
     const room = floor.rooms.find((r) => r.id === id);
     if (room) return <RoomInspector floor={floor} room={room} />;
   }

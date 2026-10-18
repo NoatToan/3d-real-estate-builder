@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { current, isDraft, produce, type Draft } from "immer";
-import type { Constraints, FinanceInputs, Floor, Id, Lot, Opening, Project, Room, Stair, Vec2, Wall } from "@/domain/types";
+import type { Constraints, FinanceInputs, Floor, Furniture, Id, Lot, Opening, Project, Room, Stair, Vec2, Wall } from "@/domain/types";
 import { createFloor, createWall, newId } from "@/domain/factory";
 import { reconcileRooms } from "@/domain/rooms";
 import { buildablePolygon } from "@/domain/stats";
 import { siteLotPolygon } from "@/domain/roadCut";
+import type { QuickFloorPlan } from "@/domain/quickFloor";
+import { pointInPolygon } from "@/geometry/polygon";
 import { clampOpening } from "@/geometry/openings";
 import { insetPolygon } from "@/geometry/offset";
 import { dist } from "@/geometry/vec";
@@ -51,6 +53,11 @@ export interface ProjectState {
 
   addStair: (floorId: Id, s: Stair) => void;
   updateStair: (floorId: Id, id: Id, patch: Partial<Omit<Stair, "id">>) => void;
+
+  /** Replaces everything on a floor with a generated layout (one undo step). */
+  applyQuickFloor: (floorId: Id, plan: QuickFloorPlan) => void;
+  addFurniture: (floorId: Id, f: Furniture) => void;
+  updateFurniture: (floorId: Id, id: Id, patch: Partial<Omit<Furniture, "id">>) => void;
 
   addRoom: (floorId: Id, room: Room) => void;
   updateRoom: (floorId: Id, id: Id, patch: Partial<Pick<Room, "name" | "type" | "polygon">>) => void;
@@ -175,6 +182,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
             .filter((o) => kept.has(map.get(o.wallId) ?? ""))
             .map((o) => ({ ...o, id: newId("o_"), wallId: map.get(o.wallId)! }));
         }
+        if (opts.copyWalls) floor.furniture = plain(src.furniture).map((x) => ({ ...x, id: newId("fu_") }));
         floor.rooms = reconcileRooms([], floor.walls);
         if (opts.copyWalls) {
           const srcRooms = plain(src.rooms);
@@ -316,6 +324,41 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       s.rotation = ((s.rotation % 360) + 360) % 360;
     }),
 
+  applyQuickFloor: (floorId, plan) =>
+    get().mutate((d) => {
+      const f = findFloor(d, floorId);
+      if (!f) return;
+      f.walls = plan.walls as Draft<Wall>[];
+      f.openings = plan.openings as Draft<Opening>[];
+      f.stairs = plan.stairs as Draft<Stair>[];
+      f.furniture = plan.furniture as Draft<Furniture>[];
+      f.rooms = [];
+      syncFloor(f);
+      for (const l of plan.labels) {
+        const r = f.rooms.find((x) => pointInPolygon(l.at, x.polygon));
+        if (r) {
+          r.name = l.name;
+          r.type = l.type;
+        }
+      }
+    }),
+
+  addFurniture: (floorId, f) =>
+    get().mutate((d) => {
+      findFloor(d, floorId)?.furniture.push(f as Draft<Furniture>);
+    }),
+
+  updateFurniture: (floorId, id, patch) =>
+    get().mutate((d) => {
+      const f = findFloor(d, floorId)?.furniture.find((x) => x.id === id);
+      if (!f) return;
+      Object.assign(f, patch);
+      f.width = Math.min(20, Math.max(0.1, f.width));
+      f.depth = Math.min(20, Math.max(0.1, f.depth));
+      f.height = Math.min(10, Math.max(0.05, f.height));
+      f.rotation = ((f.rotation % 360) + 360) % 360;
+    }),
+
   addRoom: (floorId, room) =>
     get().mutate((d) => {
       const f = findFloor(d, floorId);
@@ -346,6 +389,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       f.walls = f.walls.filter((w) => !del.has(w.id));
       f.openings = f.openings.filter((o) => !del.has(o.id));
       f.stairs = f.stairs.filter((s) => !del.has(s.id));
+      f.furniture = f.furniture.filter((x) => !del.has(x.id));
       f.rooms = f.rooms.filter((r) => !(r.source === "manual" && del.has(r.id)));
       if (f.walls.length !== wallsBefore || ids.some((id) => f.rooms.some((r) => r.id === id))) syncFloor(f);
     }),
