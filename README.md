@@ -10,22 +10,24 @@ The app is fully client-side — there is no backend or database; projects are s
 
 ## Getting started
 
+Requires Node ≥ 20.9 and pnpm (version pinned in `packageManager`; `corepack enable` picks it up).
+
 ```bash
-npm install                 # also copies the tesseract assets into public/tesseract
+pnpm install                # also copies the tesseract assets into public/tesseract
 cp .env.example .env.local  # optional, see below
-npm run dev                 # http://localhost:3000
+pnpm dev                    # http://localhost:3000
 ```
 
 ## Scripts
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Dev server |
-| `npm run build` | Static build into `out/` |
-| `npm start` | Serve `out/` locally |
-| `npm run lint` / `npm run typecheck` | ESLint / `tsc --noEmit` |
-| `npm test` | Unit tests (Vitest) for geometry, domain, store, persistence, OCR parsing |
-| `npm run test:coverage` | Tests with coverage thresholds |
+| `pnpm dev` | Dev server |
+| `pnpm build` | Static build into `out/` |
+| `pnpm start` | Serve `out/` locally |
+| `pnpm lint` / `pnpm typecheck` | ESLint / `tsc --noEmit` |
+| `pnpm test` | Unit tests (Vitest) for geometry, domain, store, persistence, OCR parsing |
+| `pnpm test:coverage` | Tests with coverage thresholds |
 
 ## Project layout
 
@@ -47,4 +49,4 @@ See `.env.example`. Only `NEXT_PUBLIC_BASE_PATH` (optional) — set it when the 
 
 ## Deploy
 
-Deployed on Vercel as a static Next.js export (`output: "export"`). No env vars are required.
+Deployed on Vercel as a static Next.js export (`output: "export"`); install/build commands are pinned in `vercel.json`. Every merge to `main` deploys production. No env vars are required.
