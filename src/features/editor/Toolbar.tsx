@@ -48,7 +48,7 @@ export function Toolbar() {
 
   return (
     <nav aria-label="Công cụ" className="flex w-[4.75rem] shrink-0 flex-col items-center gap-0.5 overflow-y-auto border-r border-line bg-surface py-2">
-      <ToolButton label="Tạo nhanh mặt sàn từ mẫu" short="Tạo nhanh" onClick={() => ed.setQuickFloorOpen(true)}>
+      <ToolButton label="Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" short="Tạo nhanh" onClick={() => ed.setQuickFloorOpen(true)}>
         <Wand2 size={18} />
       </ToolButton>
       <Box className="my-1 h-px w-10 bg-line" />

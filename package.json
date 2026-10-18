@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "pnpm dlx serve out",
+    "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -17,6 +17,7 @@
     "prebuild": "node scripts/copy-assets.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@babylonjs/core": "^9.31.0",
     "@tesseract.js-data/eng": "^1.0.0",
     "@tesseract.js-data/vie": "^1.0.0",

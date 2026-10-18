@@ -12,7 +12,9 @@ The **Tài chính** view (shortcut `4`) turns the drawn floors into a feasibilit
 
 Lots can carry a **road cut** (giải phóng mặt bằng / lộ giới): pick the edge on the road and the depth taken; the plan and 3D show the strip in orange, and coverage, FAR, exterior walls, setbacks and the "outside the lot" check all use the land that is left.
 
-The app is fully client-side — there is no backend or database; projects are stored in the user's browser.
+**Thiết kế bằng AI:** in the Tạo nhanh dialog the user types (or speaks — Web Speech API, vi-VN) what the floor should be. `POST /api/ai-layout` sends the brief, the usable lot size and the other floors to Claude (`claude-opus-5`, structured output validated with zod) which returns the programme as bands (rooms, depths, stair + WC core, furniture). The same generator as the templates then builds the geometry, so the result always fits the lot; the user can still edit it before building.
+
+Everything else is client-side — there is no database; projects are stored in the user's browser. The only server code is `/api/ai-layout`, which keeps the API key off the client.
 
 ## Getting started
 
@@ -29,8 +31,8 @@ pnpm dev                    # http://localhost:3000
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | Dev server |
-| `pnpm build` | Static build into `out/` |
-| `pnpm start` | Serve `out/` locally |
+| `pnpm build` | Production build |
+| `pnpm start` | Serve the production build |
 | `pnpm lint` / `pnpm typecheck` | ESLint / `tsc --noEmit` |
 | `pnpm test` | Unit tests (Vitest) for geometry, domain, store, persistence, OCR parsing |
 | `pnpm test:coverage` | Tests with coverage thresholds |
@@ -39,7 +41,7 @@ pnpm dev                    # http://localhost:3000
 
 ```
 src/
-  app/          routes: / (projects home), /editor
+  app/          routes: / (projects home), /editor, /api/ai-layout (Claude)
   features/     home, lot wizard, 2D plan, 3D viewer, finance, editor shell
   domain/       types, zod schema, factories, validation, stats, finance model
   geometry/     polygon/segment math, wall graph, snapping, openings, stairs, hit testing
@@ -51,8 +53,12 @@ src/
 
 ## Environment variables
 
-See `.env.example`. Only `NEXT_PUBLIC_BASE_PATH` (optional) — set it when the site is hosted under a sub-path so the OCR assets resolve.
+See `.env.example`:
+
+- `ANTHROPIC_API_KEY` (server only) — enables “Thiết kế bằng AI”. Without it the endpoint answers 503 and the rest of the app works as before.
+- `AI_LAYOUT_MODEL` (optional) — overrides the model (default `claude-opus-5`).
+- `NEXT_PUBLIC_BASE_PATH` (optional) — set it when the site is hosted under a sub-path so the OCR assets resolve.
 
 ## Deploy
 
-Deployed on Vercel as a static Next.js export (`output: "export"`); install/build commands are pinned in `vercel.json`. Every merge to `main` deploys production. No env vars are required.
+Deployed on Vercel as a regular Next.js app (static pages + one serverless route); install/build commands are pinned in `vercel.json`. Every merge to `main` deploys production. Set `ANTHROPIC_API_KEY` in the Vercel project to turn on the AI designer.

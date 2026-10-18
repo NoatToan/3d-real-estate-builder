@@ -58,7 +58,7 @@ export function GettingStarted() {
           </Step>
           <Step n={2} done={hasWalls} title="Dựng tường và chia phòng">
             <Button size="sm" variant="primary" onClick={() => ed.setQuickFloorOpen(true)}>
-              Tạo nhanh từ mẫu
+              Mô tả bằng AI / mẫu
             </Button>
             <Button size="sm" variant="ghost" onClick={() => ed.setTool("wall")}>
               Tự vẽ vách

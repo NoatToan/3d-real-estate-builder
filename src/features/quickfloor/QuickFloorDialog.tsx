@@ -16,6 +16,8 @@ import { fmtLength, ROOM_TYPE_COLORS, ROOM_TYPE_LABELS } from "@/domain/labels";
 import { ROOM_TYPES, type Vec2 } from "@/domain/types";
 import { bbox, edgeLengths } from "@/geometry/polygon";
 import { generateStair } from "@/geometry/stairs";
+import { aiContextFor, aiToZones } from "@/domain/aiLayout";
+import { AiBrief } from "./AiBrief";
 
 /** Schematic of the generated floor: walls, stair, furniture and room names. */
 function Preview({ plan, outline, floorHeight }: { plan: QuickFloorPlan; outline: Vec2[]; floorHeight: number }) {
@@ -98,6 +100,12 @@ export function QuickFloorDialog({ onClose }: { onClose: () => void }) {
         : null,
     [outline, zones, frontEdge, withStair, index, floor, project.defaults],
   );
+  // Size from the same generator, so Claude plans against the space it will actually get.
+  const sizePlan = useMemo(
+    () => planQuickFloor(outline, [{ name: "x", type: "other", depth: 0 }], { frontEdge, withStair: false, isGround: false, floorHeight: 3, exteriorThickness: project.defaults.exteriorWallThickness, interiorThickness: project.defaults.wallThickness }),
+    [outline, frontEdge, project.defaults],
+  );
+  const aiContext = useMemo(() => (sizePlan ? aiContextFor(project, index, sizePlan) : null), [project, index, sizePlan]);
   if (!floor) return null;
 
   const hasContent = floor.walls.length + floor.furniture.length + floor.stairs.length > 0;
@@ -133,8 +141,20 @@ export function QuickFloorDialog({ onClose }: { onClose: () => void }) {
     >
       <Col className="gap-3">
         <TextMuted as="p" className="text-sm">
-          Chọn một mẫu bố trí, chỉnh tên và chiều sâu từng phòng nếu muốn. Ứng dụng tự dựng tường bao, vách ngăn, cửa, cầu thang, WC và đồ nội thất vừa với lô đất.
+          Mô tả bằng lời để AI thiết kế, hoặc chọn một mẫu bố trí; chỉnh tên và chiều sâu từng phòng nếu muốn. Ứng dụng tự dựng tường bao, vách ngăn, cửa, cầu thang, WC và đồ nội thất vừa với lô đất.
         </TextMuted>
+        {aiContext && (
+          <AiBrief
+            context={aiContext}
+            onLayout={(l) => {
+              const r = aiToZones(l, aiContext.depth);
+              setTemplateId("ai");
+              setZones(r.zones);
+              setWithStair(r.withStair);
+            }}
+          />
+        )}
+        <TextFaint className="text-caption font-semibold uppercase">Hoặc chọn mẫu có sẵn</TextFaint>
         <Box className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {QUICK_TEMPLATES.map((t) => (
             <button
