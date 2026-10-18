@@ -2,7 +2,8 @@ import { create } from "zustand";
 import type { Id, StairType } from "@/domain/types";
 
 export type Tool = "select" | "pan" | "wall" | "room" | "door" | "window" | "stair" | "measure";
-export type ViewMode = "2d" | "3d" | "split";
+/** "finance" swaps the drawing panes for the feasibility (dự toán & dòng tiền) view. */
+export type ViewMode = "2d" | "3d" | "split" | "finance";
 
 export interface Selection {
   floorId: Id;

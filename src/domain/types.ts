@@ -140,6 +140,57 @@ export interface Floor {
   stairs: Stair[];
 }
 
+/** One-off investment item. Money is in million VND (triệu đồng). */
+export interface CostItem {
+  id: Id;
+  name: string;
+  amount: number;
+}
+
+/** Recurring income: quantity × monthly unit price (million VND / unit / month). */
+export interface IncomeItem {
+  id: Id;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export const FINANCE_SCENARIOS = ["low", "base", "high"] as const;
+export type FinanceScenario = (typeof FINANCE_SCENARIOS)[number];
+
+/**
+ * Feasibility inputs (dự toán đầu tư & dòng tiền cho thuê). Money in million VND,
+ * rates in percent, durations in months / years as named.
+ */
+export interface FinanceInputs {
+  /** Turnkey construction price per m² of equivalent floor area (triệu/m² quy đổi). */
+  unitPrice: number;
+  /** Surcharge on the construction price, e.g. +5% for narrow lots. */
+  surchargePct: number;
+  /** Foundation weight as % of the ground-floor area (móng). */
+  foundationPct: number;
+  /** Roof weight as % of the top-floor area (mái). */
+  roofPct: number;
+  /** Equivalent floor area typed by the user; null = computed from the drawn floors. */
+  areaOverride: number | null;
+  extraCosts: CostItem[];
+  contingencyPct: number;
+  buildMonths: number;
+  /** Own money put in (savings, compensation…). The rest is borrowed. */
+  ownCapital: number;
+  income: IncomeItem[];
+  occupancyPct: number;
+  rentGrowthPct: number;
+  /** Tax on collected rent, % of revenue. */
+  taxPct: number;
+  /** Operating cost per month. */
+  opexMonthly: number;
+  opexGrowthPct: number;
+  loanRatePct: number;
+  loanYears: number;
+  scenario: FinanceScenario;
+}
+
 export interface Project {
   id: Id;
   name: string;
@@ -154,6 +205,7 @@ export interface Project {
     wallThickness: number;
     exteriorWallThickness: number;
   };
+  finance: FinanceInputs;
 }
 
 export interface ProjectMeta {

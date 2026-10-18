@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ROOM_TYPES, SCHEMA_VERSION, STAIR_TYPES, type Project } from "./types";
+import { FINANCE_SCENARIOS, ROOM_TYPES, SCHEMA_VERSION, STAIR_TYPES, type Project } from "./types";
+import { defaultFinance } from "./factory";
 
 const num = z.number().refine(Number.isFinite, "Giá trị số không hợp lệ");
 const pos = num.refine((n) => n > 0, "Giá trị phải lớn hơn 0");
@@ -72,6 +73,27 @@ const lot = z.object({
   address: z.string().max(500).default(""),
 });
 
+const finance = z.object({
+  unitPrice: num,
+  surchargePct: num,
+  foundationPct: num,
+  roofPct: num,
+  areaOverride: num.nullable(),
+  extraCosts: z.array(z.object({ id: z.string().min(1), name: z.string().max(200), amount: num })).max(100),
+  contingencyPct: num,
+  buildMonths: num,
+  ownCapital: num,
+  income: z.array(z.object({ id: z.string().min(1), name: z.string().max(200), quantity: num, unitPrice: num })).max(100),
+  occupancyPct: num,
+  rentGrowthPct: num,
+  taxPct: num,
+  opexMonthly: num,
+  opexGrowthPct: num,
+  loanRatePct: num,
+  loanYears: num,
+  scenario: z.enum(FINANCE_SCENARIOS),
+});
+
 export const projectSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(200),
@@ -87,6 +109,8 @@ export const projectSchema = z.object({
   }),
   floors: z.array(floor).min(1).max(100),
   defaults: z.object({ wallThickness: pos, exteriorWallThickness: pos }),
+  // Added after v1 shipped: older documents get the default assumptions.
+  finance: finance.default(defaultFinance),
 });
 
 export const EXPORT_FORMAT = "real-estate-builder";

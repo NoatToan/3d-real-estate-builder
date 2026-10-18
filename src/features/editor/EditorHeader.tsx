@@ -19,6 +19,7 @@ const VIEWS: { value: ViewMode; label: string }[] = [
   { value: "2d", label: "2D" },
   { value: "split", label: "2D + 3D" },
   { value: "3d", label: "3D" },
+  { value: "finance", label: "Tài chính" },
 ];
 
 function SaveIndicator({ status }: { status: SaveStatus }) {

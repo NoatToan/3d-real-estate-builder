@@ -6,6 +6,8 @@ Browser-based house designer: define a lot (trace it from a photo/scan with OCR 
 - **2D plan:** Konva / react-konva · **3D viewer:** Babylon.js · **OCR:** tesseract.js (Vietnamese + English, assets served locally)
 - **State:** Zustand + Immer + zundo (undo/redo) · **Persistence:** IndexedDB (`idb-keyval`), projects can be exported/imported as `.reb.json`
 
+The **Tài chính** view (shortcut `4`) turns the drawn floors into a feasibility study: equivalent floor area (móng + floors + mái) × turnkey price, extra cost items, own capital vs. bank loan, rental income lines, and a 20-year cash flow with break-even / loan-payoff year under low / base / high scenarios. Money is in million VND; inputs are saved with the project.
+
 The app is fully client-side — there is no backend or database; projects are stored in the user's browser.
 
 ## Getting started
@@ -34,8 +36,8 @@ pnpm dev                    # http://localhost:3000
 ```
 src/
   app/          routes: / (projects home), /editor
-  features/     home, lot wizard, 2D plan, 3D viewer, editor shell
-  domain/       types, zod schema, factories, validation, stats
+  features/     home, lot wizard, 2D plan, 3D viewer, finance, editor shell
+  domain/       types, zod schema, factories, validation, stats, finance model
   geometry/     polygon/segment math, wall graph, snapping, openings, stairs, hit testing
   store/        Zustand stores (project + editor UI)
   persistence/  IndexedDB, autosave, import/export
