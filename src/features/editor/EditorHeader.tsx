@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, CloudOff, Download, FileJson, Image as ImageIcon, Loader2, Map as MapIcon, Redo2, Undo2 } from "lucide-react";
+import { ArrowLeft, Box as Box3D, Check, Coins, Columns2, Grid2x2, CloudOff, Download, FileJson, Image as ImageIcon, Loader2, Map as MapIcon, Redo2, Undo2 } from "lucide-react";
 import { Box, Col, Row, Text } from "@/components/ui/BasePrimitives";
 import { Button, IconButton } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/Fields";
@@ -15,11 +15,11 @@ import { exportProjectFile } from "@/persistence/serialize";
 import { downloadBlob, downloadDataUrl, slugify } from "@/ocr/image";
 import { exportRegistry } from "@/features/plan/hooks";
 
-const VIEWS: { value: ViewMode; label: string }[] = [
-  { value: "2d", label: "2D" },
-  { value: "split", label: "2D + 3D" },
-  { value: "3d", label: "3D" },
-  { value: "finance", label: "Tài chính" },
+const VIEWS: { value: ViewMode; label: string; icon: React.ReactNode }[] = [
+  { value: "2d", label: "2D", icon: <Grid2x2 size={14} /> },
+  { value: "split", label: "2D + 3D", icon: <Columns2 size={14} /> },
+  { value: "3d", label: "3D", icon: <Box3D size={14} /> },
+  { value: "finance", label: "Tài chính", icon: <Coins size={14} /> },
 ];
 
 function SaveIndicator({ status }: { status: SaveStatus }) {

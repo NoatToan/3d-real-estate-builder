@@ -6,7 +6,7 @@ import { Box, Col, Text } from "@/components/ui/BasePrimitives";
 import { useEditorStore, type Tool } from "@/store/editorStore";
 
 export const TOOLS: { tool: Tool; label: string; short: string; key: string; icon: ReactNode; hint: string }[] = [
-  { tool: "select", label: "Chọn / di chuyển", short: "Chọn", key: "V", icon: <MousePointer2 size={18} />, hint: "Nhấp vào vách, cửa, đồ nội thất… để chọn và sửa ở bảng bên phải. Kéo để di chuyển, R để xoay, Delete để xoá." },
+  { tool: "select", label: "Chọn / di chuyển", short: "Chọn", key: "V", icon: <MousePointer2 size={18} />, hint: "Nhấp vào vách, cửa, đồ nội thất… để chọn và sửa ở Bảng điều khiển. Kéo để di chuyển, R để xoay, Delete để xoá." },
   { tool: "pan", label: "Cuộn khung nhìn", short: "Cuộn", key: "H", icon: <Hand size={18} />, hint: "Kéo để cuộn. Lăn chuột để phóng to/thu nhỏ." },
   { tool: "wall", label: "Vẽ vách", short: "Vách", key: "W", icon: <BrickWall size={18} />, hint: "Nhấp từng điểm để vẽ vách. Gõ số để nhập độ dài. Enter / nhấp đúp để kết thúc, Esc để huỷ. Giữ Shift để khoá góc." },
   { tool: "room", label: "Vẽ phòng (đa giác)", short: "Phòng", key: "E", icon: <SquareDashed size={18} />, hint: "Nhấp các góc của phòng, nhấp lại điểm đầu hoặc Enter để khép kín. Vách được tạo tự động." },

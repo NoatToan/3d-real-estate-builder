@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CircleAlert, Info, TriangleAlert } from "lucide-react";
+import { ChartColumn, CircleAlert, Eye, Info, Ruler, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Box, Col, Row, Text, TextFaint, TextMuted } from "@/components/ui/BasePrimitives";
 import { NumberField, SelectField, Toggle } from "@/components/ui/Fields";
 import { Section } from "@/components/ui/Section";
@@ -193,6 +193,7 @@ export function SidePanels({ issues }: { issues: Issue[] }) {
     <>
       <Section
         title="Kiểm tra"
+        icon={<ShieldCheck size={14} />}
         open={panels.issues}
         onToggle={() => toggle("issues")}
         badge={
@@ -204,14 +205,14 @@ export function SidePanels({ issues }: { issues: Issue[] }) {
         <IssuesList issues={issues} />
       </Section>
       {showStats && (
-        <Section title="Thống kê diện tích" open={panels.stats} onToggle={() => toggle("stats")}>
+        <Section title="Thống kê diện tích" icon={<ChartColumn size={14} />} open={panels.stats} onToggle={() => toggle("stats")}>
           <Stats />
         </Section>
       )}
-      <Section title="Ràng buộc (tuỳ chọn)" open={panels.constraints} onToggle={() => toggle("constraints")}>
+      <Section title="Ràng buộc (tuỳ chọn)" icon={<Ruler size={14} />} open={panels.constraints} onToggle={() => toggle("constraints")}>
         <Constraints />
       </Section>
-      <Section title="Hiển thị" open={panels.display} onToggle={() => toggle("display")}>
+      <Section title="Hiển thị" icon={<Eye size={14} />} open={panels.display} onToggle={() => toggle("display")}>
         <Display />
       </Section>
     </>

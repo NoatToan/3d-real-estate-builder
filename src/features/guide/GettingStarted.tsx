@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { AppWindow, BedDouble, Box as Box3D, BrickWall, Check, ChevronDown, Coins, DoorOpen, Footprints, Map as MapIcon, Plus, Sofa, Wand2 } from "lucide-react";
 import { Box, Col, Row, Text, TextMuted } from "@/components/ui/BasePrimitives";
 import { Button } from "@/components/ui/Button";
 import { useProjectStore } from "@/store/projectStore";
@@ -52,34 +52,34 @@ export function GettingStarted() {
       {open && (
         <Col className="gap-2.5 px-3 pb-3">
           <Step n={1} done title="Khai báo lô đất">
-            <Button size="sm" variant="ghost" onClick={() => ed.setLotWizardOpen(true)}>
+            <Button size="sm" variant="ghost" icon={<MapIcon size={14} />} onClick={() => ed.setLotWizardOpen(true)}>
               Sửa ranh đất
             </Button>
           </Step>
           <Step n={2} done={hasWalls} title="Dựng tường và chia phòng">
-            <Button size="sm" variant="primary" onClick={() => ed.setQuickFloorOpen(true)}>
+            <Button size="sm" variant="primary" icon={<Wand2 size={14} />} onClick={() => ed.setQuickFloorOpen(true)}>
               Mô tả bằng AI / mẫu
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => ed.setRoomPlacerOpen(true)}>
+            <Button size="sm" variant="ghost" icon={<BedDouble size={14} />} onClick={() => ed.setRoomPlacerOpen(true)}>
               Thêm phòng mẫu
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => ed.setTool("wall")}>
+            <Button size="sm" variant="ghost" icon={<BrickWall size={14} />} onClick={() => ed.setTool("wall")}>
               Tự vẽ vách
             </Button>
           </Step>
           <Step n={3} done={hasOpenings} title="Thêm cửa, cửa sổ, cầu thang">
-            <Button size="sm" variant="ghost" onClick={() => ed.setTool("door")}>
+            <Button size="sm" variant="ghost" icon={<DoorOpen size={14} />} onClick={() => ed.setTool("door")}>
               Cửa đi
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => ed.setTool("window")}>
+            <Button size="sm" variant="ghost" icon={<AppWindow size={14} />} onClick={() => ed.setTool("window")}>
               Cửa sổ
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => ed.setTool("stair")}>
+            <Button size="sm" variant="ghost" icon={<Footprints size={14} />} onClick={() => ed.setTool("stair")}>
               Cầu thang
             </Button>
           </Step>
           <Step n={4} done={hasFurniture} title="Bày nội thất">
-            <Button size="sm" variant="ghost" onClick={() => ed.setTool("furniture")}>
+            <Button size="sm" variant="ghost" icon={<Sofa size={14} />} onClick={() => ed.setTool("furniture")}>
               Mở thư viện nội thất
             </Button>
           </Step>
@@ -87,6 +87,7 @@ export function GettingStarted() {
             <Button
               size="sm"
               variant="ghost"
+              icon={<Plus size={14} />}
               onClick={() => {
                 const id = useProjectStore.getState().addFloor({ copyFromId: floor.id });
                 if (id) ed.setActiveFloor(id);
@@ -94,10 +95,10 @@ export function GettingStarted() {
             >
               Thêm tầng trên
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => ed.setView("3d")}>
+            <Button size="sm" variant="ghost" icon={<Box3D size={14} />} onClick={() => ed.setView("3d")}>
               Xem 3D
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => ed.setView("finance")}>
+            <Button size="sm" variant="ghost" icon={<Coins size={14} />} onClick={() => ed.setView("finance")}>
               Tài chính
             </Button>
           </Step>

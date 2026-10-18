@@ -16,7 +16,7 @@ const ff = (args) => {
     process.exit(1);
   }
 };
-const filters = "fps=5,scale=960:-1:flags=lanczos";
+const filters = "fps=4,scale=900:-1:flags=lanczos";
 const palette = "docs/demo/.palette.png";
 ff(["-i", src, "-vf", `${filters},palettegen=max_colors=128:stats_mode=diff`, palette]);
 ff(["-i", src, "-i", palette, "-lavfi", `${filters} [x]; [x][1:v] paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle`, out]);

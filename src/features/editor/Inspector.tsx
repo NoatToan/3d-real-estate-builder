@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Copy, RotateCw, Scissors, Trash2, TriangleAlert } from "lucide-react";
+import { AppWindow, BrickWall, Copy, DoorOpen, Footprints, Layers, RotateCw, Scissors, Sofa, Trash2, TriangleAlert } from "lucide-react";
 import { Box, Col, Row, Text, TextFaint, TextMuted } from "@/components/ui/BasePrimitives";
 import { Button } from "@/components/ui/Button";
 import { NumberField, SelectField, TextField, Toggle } from "@/components/ui/Fields";
@@ -19,12 +19,16 @@ import { generateStair } from "@/geometry/stairs";
 import { mid, normalize, sub } from "@/geometry/vec";
 import { wallLength } from "@/geometry/openings";
 import { TOOLS } from "./Toolbar";
+import { RoomTypeBadge } from "./roomIcons";
 
-function Panel({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
+function Panel({ title, icon, children, actions }: { title: string; icon?: ReactNode; children: ReactNode; actions?: ReactNode }) {
   return (
     <section className="border-b border-line px-3 py-3">
       <Row className="mb-2 items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h3>
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          {icon}
+          {title}
+        </h3>
         {actions}
       </Row>
       <Col className="gap-2">{children}</Col>
@@ -66,7 +70,7 @@ function WallInspector({ floor, wall }: { floor: Floor; wall: Wall }) {
   const s = useProjectStore.getState();
   const L = wallLength(wall);
   return (
-    <Panel title="Vách" actions={<DeleteButton floorId={floor.id} ids={[wall.id]} />}>
+    <Panel title="Vách" icon={<BrickWall size={14} />} actions={<DeleteButton floorId={floor.id} ids={[wall.id]} />}>
       <Grid2>
         <NumberField
           label="Chiều dài"
@@ -104,7 +108,7 @@ function OpeningInspector({ floor, opening }: { floor: Floor; opening: Opening }
   const up = (patch: Partial<Opening>) => s.updateOpening(floor.id, opening.id, patch);
   const wall = floor.walls.find((w) => w.id === opening.wallId);
   return (
-    <Panel title={OPENING_LABELS[opening.kind]} actions={<DeleteButton floorId={floor.id} ids={[opening.id]} />}>
+    <Panel title={OPENING_LABELS[opening.kind]} icon={opening.kind === "door" ? <DoorOpen size={14} /> : <AppWindow size={14} />} actions={<DeleteButton floorId={floor.id} ids={[opening.id]} />}>
       <SelectField label="Loại" value={opening.kind} options={[{ value: "door", label: "Cửa đi" }, { value: "window", label: "Cửa sổ" }]} onChange={(kind) => up({ kind, sill: kind === "door" ? 0 : Math.max(opening.sill, 0.8) })} />
       <Grid2>
         <NumberField label="Rộng" value={opening.width} min={0.3} max={wall ? wallLength(wall) : 10} suffix="m" onCommit={(n) => n && up({ width: n })} />
@@ -131,7 +135,7 @@ function StairInspector({ floor, stair, isTop }: { floor: Floor; stair: Stair; i
   const up = (patch: Partial<Stair>) => s.updateStair(floor.id, stair.id, patch);
   const g = generateStair(stair, floor.height);
   return (
-    <Panel title="Cầu thang" actions={<DeleteButton floorId={floor.id} ids={[stair.id]} />}>
+    <Panel title="Cầu thang" icon={<Footprints size={14} />} actions={<DeleteButton floorId={floor.id} ids={[stair.id]} />}>
       <SelectField label="Kiểu thang" value={stair.type} options={STAIR_TYPES.map((t) => ({ value: t, label: STAIR_TYPE_LABELS[t] }))} onChange={(type) => up({ type })} />
       <Grid2>
         <NumberField label={stair.type === "spiral" ? "Rộng bậc" : "Rộng vế"} value={stair.width} min={0.4} max={5} suffix="m" onCommit={(n) => n && up({ width: n })} />
@@ -171,7 +175,7 @@ function FurnitureInspector({ floor, item }: { floor: Floor; item: Furniture }) 
   const up = (patch: Partial<Furniture>) => s.updateFurniture(floor.id, item.id, patch);
   const spec = furnitureSpec(item.kind);
   return (
-    <Panel title="Nội thất" actions={<DeleteButton floorId={floor.id} ids={[item.id]} />}>
+    <Panel title="Nội thất" icon={<Sofa size={14} />} actions={<DeleteButton floorId={floor.id} ids={[item.id]} />}>
       <Row className="items-center gap-2">
         <FurnitureIcon spec={spec} size={44} />
         <TextField className="flex-1" label="Tên" value={item.name} onCommit={(name) => up({ name })} />
@@ -211,7 +215,7 @@ function FurnitureInspector({ floor, item }: { floor: Floor; item: Furniture }) 
 function RoomInspector({ floor, room }: { floor: Floor; room: Room }) {
   const s = useProjectStore.getState();
   return (
-    <Panel title="Phòng" actions={room.source === "manual" ? <DeleteButton floorId={floor.id} ids={[room.id]} /> : undefined}>
+    <Panel title="Phòng" icon={<RoomTypeBadge type={room.type} size={18} />} actions={room.source === "manual" ? <DeleteButton floorId={floor.id} ids={[room.id]} /> : undefined}>
       <TextField label="Tên phòng" value={room.name} onCommit={(name) => s.updateRoom(floor.id, room.id, { name })} />
       <SelectField
         label="Công năng"
@@ -240,7 +244,7 @@ function ToolOptions() {
   const ed = useEditorStore.getState();
   const info = TOOLS.find((t) => t.tool === tool);
   return (
-    <Panel title={`Công cụ: ${info?.label ?? ""}`}>
+    <Panel title={`Công cụ: ${info?.label ?? ""}`} icon={info?.icon}>
       <TextMuted as="p" className="text-xs">
         {info?.hint}
       </TextMuted>
@@ -267,7 +271,7 @@ function ToolOptions() {
 function FloorProperties({ floor }: { floor: Floor }) {
   const s = useProjectStore.getState();
   return (
-    <Panel title="Tầng đang chọn">
+    <Panel title="Tầng đang chọn" icon={<Layers size={14} />}>
       <TextField label="Tên tầng" value={floor.name} onCommit={(name) => s.updateFloor(floor.id, { name })} />
       <Grid2>
         <NumberField label="Chiều cao tầng" value={floor.height} min={2} max={10} suffix="m" onCommit={(n) => n && s.updateFloor(floor.id, { height: n })} />

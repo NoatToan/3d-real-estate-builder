@@ -9,6 +9,9 @@ import { useEditorStore } from "@/store/editorStore";
 import { exportRegistry } from "@/features/plan/hooks";
 import type { HouseScene, SceneInput } from "./sceneBuilder";
 
+/** Grid (m) furniture and stairs snap to while dragged in 3D. */
+const DRAG_SNAP = 0.05;
+
 function readInput(): SceneInput | null {
   const project = useProjectStore.getState().project;
   if (!project) return null;
@@ -57,6 +60,33 @@ export function Viewer3D() {
           if (ed.activeFloorId !== t.floorId) ed.setActiveFloor(t.floorId);
           ed.select({ floorId: t.floorId, ids: [t.id] });
         };
+        // Drag furniture / stairs in 3D: one undo step per drag, the 2D plan follows the same store.
+        let origin: { x: number; y: number } | null = null;
+        hs.onDrag = {
+          start: (t) => {
+            const f = useProjectStore.getState().project?.floors.find((x) => x.id === t.floorId);
+            const item = t.kind === "stair" ? f?.stairs.find((x) => x.id === t.id) : f?.furniture.find((x) => x.id === t.id);
+            if (!item) return false;
+            origin = { x: item.x, y: item.y };
+            const ed = useEditorStore.getState();
+            if (ed.activeFloorId !== t.floorId) ed.setActiveFloor(t.floorId);
+            ed.select({ floorId: t.floorId, ids: [t.id] });
+            useProjectStore.getState().begin();
+            return true;
+          },
+          move: (t, dx, dy) => {
+            if (!origin) return;
+            const snap = (v: number) => Math.round(v / DRAG_SNAP) * DRAG_SNAP;
+            const at = { x: snap(origin.x + dx), y: snap(origin.y + dy) };
+            const ps = useProjectStore.getState();
+            if (t.kind === "stair") ps.updateStair(t.floorId, t.id, at);
+            else ps.updateFurniture(t.floorId, t.id, at);
+          },
+          end: () => {
+            origin = null;
+            useProjectStore.getState().commit();
+          },
+        };
         hs.engine.onContextLostObservable.add(() => setError("Mất ngữ cảnh WebGL — hãy tải lại trang."));
 
         const push = () => {
@@ -87,6 +117,20 @@ export function Viewer3D() {
         ro.observe(canvas);
         cleanups.push(() => ro.disconnect());
         exportRegistry.scene = () => hs.screenshot();
+        // Automated browsers only: lets the e2e tour find a piece of furniture on screen to drag it.
+        if (navigator.webdriver) {
+          (window as unknown as { __reb3d?: unknown }).__reb3d = {
+            furniture: (kind: string) => {
+              const p = useProjectStore.getState().project;
+              const floorId = useEditorStore.getState().activeFloorId;
+              const f = p?.floors.find((x) => x.id === floorId)?.furniture.find((x) => x.kind === kind);
+              if (!f || !floorId) return null;
+              hs.scene.render();
+              return { id: f.id, x: f.x, y: f.y, screen: hs.toScreen(floorId, f, f.height * 0.8) };
+            },
+          };
+          cleanups.push(() => delete (window as unknown as { __reb3d?: unknown }).__reb3d);
+        }
         cleanups.push(() => {
           exportRegistry.scene = null;
         });
@@ -136,7 +180,7 @@ export function Viewer3D() {
         </IconButton>
       </Row>
       <TextMuted className="pointer-events-none absolute bottom-2 left-2 rounded bg-surface/80 px-2 py-0.5 text-xs">
-        Kéo chuột trái: xoay · Chuột phải: cuộn · Lăn: phóng to · Nhấp: chọn
+        Kéo nền: xoay · Kéo nội thất / cầu thang: di chuyển · Chuột phải: cuộn · Lăn: phóng to · Nhấp: chọn
       </TextMuted>
     </Box>
   );
