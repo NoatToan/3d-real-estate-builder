@@ -32,7 +32,7 @@ export function cutLineOrigin(poly: readonly Vec2[], edge: number, depth: number
   return { origin: add(poly[edge], scale(normal, depth)), normal };
 }
 
-function lineSpanInside(poly: readonly Vec2[], origin: Vec2, normal: Vec2): [Vec2, Vec2] | null {
+export function lineSpanInside(poly: readonly Vec2[], origin: Vec2, normal: Vec2): [Vec2, Vec2] | null {
   const dir = perp(normal);
   const ts: number[] = [];
   for (let i = 0, n = poly.length; i < n; i++) {

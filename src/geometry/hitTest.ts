@@ -1,11 +1,12 @@
 import type { Floor, Id, Vec2, Wall } from "@/domain/types";
+import { furnitureRect } from "@/domain/furniture";
 import { area, pointInPolygon } from "./polygon";
 import { projectOnSegment } from "./segment";
 import { pointAlongWall, wallDirection, wallLength, wallNormal } from "./openings";
 import { generateStair } from "./stairs";
 import { dist } from "./vec";
 
-export type HitKind = "opening" | "stair" | "wall" | "room";
+export type HitKind = "opening" | "furniture" | "stair" | "wall" | "room";
 
 export interface Hit {
   kind: HitKind;
@@ -13,7 +14,7 @@ export interface Hit {
 }
 
 /**
- * Finds the entity under a plan point. Priority: openings > stairs > walls > rooms
+ * Finds the entity under a plan point. Priority: openings > furniture > stairs > walls > rooms
  * (smallest room wins when rooms overlap).
  */
 export function hitTest(floor: Floor, p: Vec2, tolerance: number): Hit | null {
@@ -27,6 +28,12 @@ export function hitTest(floor: Floor, p: Vec2, tolerance: number): Hit | null {
     const a = { x: c.x - (u.x * o.width) / 2, y: c.y - (u.y * o.width) / 2 };
     const b = { x: c.x + (u.x * o.width) / 2, y: c.y + (u.y * o.width) / 2 };
     if (projectOnSegment(p, a, b).distance <= Math.max(tolerance, w.thickness / 2)) return { kind: "opening", id: o.id };
+  }
+
+  // Topmost (last placed) furniture first.
+  for (let i = floor.furniture.length - 1; i >= 0; i--) {
+    const f = floor.furniture[i];
+    if (pointInPolygon(p, furnitureRect(f))) return { kind: "furniture", id: f.id };
   }
 
   for (const s of floor.stairs) {

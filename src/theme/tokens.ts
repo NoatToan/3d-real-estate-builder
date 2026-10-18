@@ -28,6 +28,8 @@ export const canvasColors = {
   lotFill: "rgba(22,163,74,0.06)",
   setbackStroke: "#f59e0b",
   setbackFill: "rgba(245,158,11,0.08)",
+  furnitureFill: "rgba(255,255,255,0.85)",
+  furnitureStroke: "#64748b",
   roadCutStroke: "#c2410c",
   roadCutFill: "rgba(194,65,12,0.18)",
   wall: "#334155",

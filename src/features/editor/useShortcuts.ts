@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore, type Tool } from "@/store/editorStore";
 
-const TOOL_KEYS: Record<string, Tool> = { v: "select", h: "pan", w: "wall", e: "room", d: "door", n: "window", s: "stair", m: "measure" };
+const TOOL_KEYS: Record<string, Tool> = { v: "select", h: "pan", w: "wall", e: "room", d: "door", n: "window", s: "stair", i: "furniture", m: "measure" };
 
 export function isTypingTarget(t: EventTarget | null): boolean {
   const el = t as HTMLElement | null;
@@ -41,6 +41,10 @@ export function useShortcuts(enabled: boolean) {
         e.preventDefault();
         store.removeEntities(editor.selection.floorId, editor.selection.ids);
         editor.select(null);
+        return;
+      }
+      if (e.key === "?") {
+        editor.setGuideOpen(true);
         return;
       }
       if (key === "f") {

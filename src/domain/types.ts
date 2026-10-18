@@ -137,6 +137,47 @@ export interface Stair {
   sweep: number;
 }
 
+export const FURNITURE_KINDS = [
+  "sofa",
+  "armchair",
+  "coffeeTable",
+  "tvUnit",
+  "bedDouble",
+  "bedSingle",
+  "wardrobe",
+  "nightstand",
+  "kitchenCounter",
+  "fridge",
+  "diningTable4",
+  "diningTable6",
+  "toilet",
+  "basin",
+  "shower",
+  "washer",
+  "desk",
+  "officeChair",
+  "meetingTable",
+  "bookshelf",
+  "altar",
+  "plant",
+  "car",
+  "motorbike",
+] as const;
+export type FurnitureKind = (typeof FURNITURE_KINDS)[number];
+
+/** A piece of furniture placed on a floor. (x, y) is the centre; the front faces local +y. */
+export interface Furniture {
+  id: Id;
+  kind: FurnitureKind;
+  name: string;
+  x: number;
+  y: number;
+  rotation: number;
+  width: number;
+  depth: number;
+  height: number;
+}
+
 export interface Floor {
   id: Id;
   name: string;
@@ -148,6 +189,7 @@ export interface Floor {
   openings: Opening[];
   /** Stairs rising from this floor to the floor above. */
   stairs: Stair[];
+  furniture: Furniture[];
 }
 
 /** One-off investment item. Money is in million VND (triệu đồng). */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Maximize2, ScanEye, View } from "lucide-react";
+import { Layers, Maximize2, ScanEye, Scissors, View } from "lucide-react";
 import { Box, Col, Row, TextMuted } from "@/components/ui/BasePrimitives";
 import { IconButton } from "@/components/ui/Button";
 import { useProjectStore } from "@/store/projectStore";
@@ -21,6 +21,7 @@ function readInput(): SceneInput | null {
     explode: ed.viewer.explode,
     upToActive: ed.viewer.upToActive,
     roof: ed.viewer.roof,
+    cutaway: ed.viewer.cutaway,
   };
 }
 
@@ -28,6 +29,8 @@ export function Viewer3D() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<HouseScene | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const cutaway = useEditorStore((s) => s.viewer.cutaway);
+  const upToActive = useEditorStore((s) => s.viewer.upToActive);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -124,6 +127,12 @@ export function Viewer3D() {
         </IconButton>
         <IconButton label="Phối cảnh" onClick={() => sceneRef.current?.fit()}>
           <View size={16} />
+        </IconButton>
+        <IconButton label="Hạ tường để nhìn vào trong" active={cutaway} onClick={() => useEditorStore.getState().setViewer({ cutaway: !cutaway })}>
+          <Scissors size={16} />
+        </IconButton>
+        <IconButton label="Chỉ hiện đến tầng đang chọn" active={upToActive} onClick={() => useEditorStore.getState().setViewer({ upToActive: !upToActive })}>
+          <Layers size={16} />
         </IconButton>
       </Row>
       <TextMuted className="pointer-events-none absolute bottom-2 left-2 rounded bg-surface/80 px-2 py-0.5 text-xs">

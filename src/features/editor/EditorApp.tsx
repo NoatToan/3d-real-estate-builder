@@ -19,6 +19,7 @@ import { Inspector } from "./Inspector";
 import { SidePanels } from "./SidePanels";
 import { FullScreenMessage } from "./FullScreenMessage";
 import { useShortcuts } from "./useShortcuts";
+import { GettingStarted } from "@/features/guide/GettingStarted";
 
 const Viewer3D = dynamic(() => import("@/features/viewer3d/Viewer3D").then((m) => m.Viewer3D), {
   ssr: false,
@@ -29,6 +30,9 @@ const FinanceView = dynamic(() => import("@/features/finance/FinanceView").then(
   ssr: false,
   loading: () => <PaneMessage>Đang tải tài chính…</PaneMessage>,
 });
+
+const QuickFloorDialog = dynamic(() => import("@/features/quickfloor/QuickFloorDialog").then((m) => m.QuickFloorDialog), { ssr: false });
+const GuideDialog = dynamic(() => import("@/features/guide/GuideDialog").then((m) => m.GuideDialog), { ssr: false });
 
 const LotWizard = dynamic(() => import("@/features/lot/LotWizard").then((m) => m.LotWizard), { ssr: false });
 
@@ -60,6 +64,8 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
   const project = useProjectStore((s) => s.project);
   const view = useEditorStore((s) => s.view);
   const lotWizardOpen = useEditorStore((s) => s.lotWizardOpen);
+  const quickFloorOpen = useEditorStore((s) => s.quickFloorOpen);
+  const guideOpen = useEditorStore((s) => s.guideOpen);
   const saveStatus = useAutosave();
   useShortcuts(state === "ready");
 
@@ -143,12 +149,15 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
         )}
         {view !== "finance" && (
           <aside aria-label="Thuộc tính và kiểm tra" className="w-80 shrink-0 overflow-y-auto border-l border-line bg-surface">
+            <GettingStarted />
             <Inspector />
             <SidePanels issues={issues} />
           </aside>
         )}
       </Row>
       {lotWizardOpen && <LotWizard onClose={() => useEditorStore.getState().setLotWizardOpen(false)} />}
+      {quickFloorOpen && <QuickFloorDialog onClose={() => useEditorStore.getState().setQuickFloorOpen(false)} />}
+      {guideOpen && <GuideDialog onClose={() => useEditorStore.getState().setGuideOpen(false)} />}
     </Col>
   );
 }

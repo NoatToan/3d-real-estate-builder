@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import type { Id, StairType } from "@/domain/types";
+import type { FurnitureKind, Id, StairType } from "@/domain/types";
 
-export type Tool = "select" | "pan" | "wall" | "room" | "door" | "window" | "stair" | "measure";
+export type Tool = "select" | "pan" | "wall" | "room" | "door" | "window" | "stair" | "furniture" | "measure";
 /** "finance" swaps the drawing panes for the feasibility (dự toán & dòng tiền) view. */
 export type ViewMode = "2d" | "3d" | "split" | "finance";
 
@@ -17,25 +17,35 @@ export interface EditorState {
   selection: Selection | null;
 
   stairType: StairType;
+  /** Item placed by the furniture tool. */
+  furnitureKind: FurnitureKind;
   wallThickness: number | null;
   roomCreatesWalls: boolean;
 
   snap: { enabled: boolean; grid: number; angleStep: number };
   show: { ghostBelow: boolean; dimensions: boolean; lotImage: boolean; grid: boolean; roomLabels: boolean };
-  viewer: { hiddenFloorIds: Id[]; explode: number; upToActive: boolean; roof: boolean };
-  panels: { issues: boolean; stats: boolean; constraints: boolean; display: boolean };
+  /** cutaway: the top visible floor shows walls 1.2 m high so its rooms and furniture can be seen. */
+  viewer: { hiddenFloorIds: Id[]; explode: number; upToActive: boolean; roof: boolean; cutaway: boolean };
+  panels: { guide: boolean; issues: boolean; stats: boolean; constraints: boolean; display: boolean };
   /** Incremented to ask the 2D/3D views to zoom to fit. */
   fitRequest: number;
   lotWizardOpen: boolean;
+  /** Step-by-step help dialog. */
+  guideOpen: boolean;
+  quickFloorOpen: boolean;
 
   requestFit: () => void;
   setLotWizardOpen: (open: boolean) => void;
+  setGuideOpen: (open: boolean) => void;
+  setQuickFloorOpen: (open: boolean) => void;
   setView: (v: ViewMode) => void;
   setTool: (t: Tool) => void;
   setActiveFloor: (id: Id | null) => void;
   select: (sel: Selection | null) => void;
   toggleSelect: (floorId: Id, id: Id) => void;
   setStairType: (t: StairType) => void;
+  /** Picks a catalog item and arms the furniture tool. */
+  pickFurniture: (k: FurnitureKind) => void;
   setWallThickness: (t: number | null) => void;
   setRoomCreatesWalls: (v: boolean) => void;
   setSnap: (patch: Partial<EditorState["snap"]>) => void;
@@ -52,20 +62,25 @@ const initial = {
   activeFloorId: null,
   selection: null,
   stairType: "U" as StairType,
+  furnitureKind: "sofa" as FurnitureKind,
   wallThickness: null,
   roomCreatesWalls: true,
   snap: { enabled: true, grid: 0.05, angleStep: 15 },
   show: { ghostBelow: true, dimensions: true, lotImage: false, grid: true, roomLabels: true },
-  viewer: { hiddenFloorIds: [] as Id[], explode: 0, upToActive: false, roof: false },
-  panels: { issues: true, stats: true, constraints: false, display: false },
+  viewer: { hiddenFloorIds: [] as Id[], explode: 0, upToActive: false, roof: false, cutaway: true },
+  panels: { guide: true, issues: true, stats: true, constraints: false, display: false },
   fitRequest: 0,
   lotWizardOpen: false,
+  guideOpen: false,
+  quickFloorOpen: false,
 };
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
   ...initial,
   requestFit: () => set({ fitRequest: get().fitRequest + 1 }),
   setLotWizardOpen: (lotWizardOpen) => set({ lotWizardOpen }),
+  setGuideOpen: (guideOpen) => set({ guideOpen }),
+  setQuickFloorOpen: (quickFloorOpen) => set({ quickFloorOpen }),
   setView: (view) => set({ view }),
   setTool: (tool) => set({ tool }),
   setActiveFloor: (activeFloorId) => set({ activeFloorId, selection: null }),
@@ -77,6 +92,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set({ selection: ids.length ? { floorId, ids } : null });
   },
   setStairType: (stairType) => set({ stairType }),
+  pickFurniture: (furnitureKind) => set({ furnitureKind, tool: "furniture", selection: null }),
   setWallThickness: (wallThickness) => set({ wallThickness }),
   setRoomCreatesWalls: (roomCreatesWalls) => set({ roomCreatesWalls }),
   setSnap: (patch) => set({ snap: { ...get().snap, ...patch } }),

@@ -1,8 +1,9 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { Arrow, Group, Line, Rect, Shape, Text as KText } from "react-konva";
-import type { Floor, Opening, Room, Stair, Vec2, Wall } from "@/domain/types";
+import { Arrow, Ellipse, Group, Line, Rect, Shape, Text as KText } from "react-konva";
+import type { Floor, Furniture, Opening, Room, Stair, Vec2, Wall } from "@/domain/types";
+import { furnitureRect, furnitureSpec, furnitureToPlan } from "@/domain/furniture";
 import { ROOM_TYPE_COLORS, fmtArea, fmtLength } from "@/domain/labels";
 import { roomNetArea } from "@/domain/rooms";
 import type { RoadCutGeometry } from "@/domain/roadCut";
@@ -382,3 +383,41 @@ export const VoidsShape = memo(function VoidsShape({ below, scale }: { below: Fl
 export function Handle({ at, scale, color = C.selection }: { at: Vec2; scale: number; color?: string }) {
   return <Rect x={at.x} y={at.y} width={9 / scale} height={9 / scale} offsetX={4.5 / scale} offsetY={4.5 / scale} fill={C.handle} stroke={color} strokeWidth={1.5} strokeScaleEnabled={false} listening={false} />;
 }
+
+/** Top view of a furniture piece: outline plus its parts, label when zoomed in. */
+export function FurnitureGlyph({ item, selected, hover, scale, preview = false }: { item: Furniture; selected?: boolean; hover?: boolean; scale: number; preview?: boolean }) {
+  const spec = furnitureSpec(item.kind);
+  const stroke = selected || hover ? C.selection : C.furnitureStroke;
+  return (
+    <Group opacity={preview ? 0.55 : 1} listening={false}>
+      <Line points={flat(furnitureRect(item))} closed fill={C.furnitureFill} stroke={stroke} strokeWidth={selected ? 2 : 1} strokeScaleEnabled={false} />
+      {spec.parts.map((p, i) =>
+        p.shape === "cylinder" || p.shape === "sphere" ? (
+          <Ellipse
+            key={i}
+            {...furnitureToPlan(item, ((p.u0 + p.u1) / 2 - 0.5) * item.width, ((p.v0 + p.v1) / 2 - 0.5) * item.depth)}
+            radiusX={((p.u1 - p.u0) * item.width) / 2}
+            radiusY={((p.v1 - p.v0) * item.depth) / 2}
+            rotation={item.rotation}
+            stroke={stroke}
+            strokeWidth={0.75}
+            strokeScaleEnabled={false}
+          />
+        ) : (
+          <Line key={i} points={flat(furnitureRect(item, p))} closed stroke={stroke} strokeWidth={0.75} strokeScaleEnabled={false} />
+        ),
+      )}
+      {!preview && Math.min(item.width, item.depth) * scale > 34 && <Label at={{ x: item.x, y: item.y }} text={item.name} scale={scale} size={10} color={C.textMuted} />}
+    </Group>
+  );
+}
+
+export const FurnitureShape = memo(function FurnitureShape({ items, selected, hoverId, scale }: { items: Furniture[]; selected: ReadonlySet<string>; hoverId: string | null; scale: number }) {
+  return (
+    <Group listening={false}>
+      {items.map((f) => (
+        <FurnitureGlyph key={f.id} item={f} selected={selected.has(f.id)} hover={hoverId === f.id} scale={scale} />
+      ))}
+    </Group>
+  );
+});
