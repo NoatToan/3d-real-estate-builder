@@ -5,7 +5,7 @@ import { cutLineOrigin, lineSpanInside, siteLotPolygon } from "./roadCut";
 import { buildablePolygon } from "./stats";
 import { insetPolygon } from "@/geometry/offset";
 import { generateStair } from "@/geometry/stairs";
-import { add, dist, dot, perp, scale, sub } from "@/geometry/vec";
+import { add, dist, dot, normalize, perp, scale, sub } from "@/geometry/vec";
 
 /**
  * "Tạo nhanh mặt sàn": lays out a townhouse floor as bands from the front to the back
@@ -126,6 +126,33 @@ export interface QuickFloorPlan {
 /** Outline the generator fills: the buildable area when setbacks are on, else the land left after a road cut. */
 export function quickFloorOutline(p: Project): Vec2[] {
   return buildablePolygon(p) ?? siteLotPolygon(p);
+}
+
+/**
+ * Index of the outline edge that faces the same way as lot edge `lotEdge`. Road cuts and setbacks
+ * re-order the outline's vertices, so a lot edge index can't be used on the outline directly:
+ * pick the edge running in the same direction that lies closest to the lot edge.
+ */
+export function outlineFrontEdge(outline: readonly Vec2[], lot: readonly Vec2[], lotEdge: number): number {
+  const n = outline.length;
+  if (lot.length < 2 || n < 2) return 0;
+  const la = lot[lotEdge % lot.length];
+  const lb = lot[(lotEdge + 1) % lot.length];
+  const dir = normalize(sub(lb, la));
+  const mid = scale(add(la, lb), 0.5);
+  let best = Math.min(Math.max(0, lotEdge), n - 1);
+  let bestDist = Infinity;
+  for (let i = 0; i < n; i++) {
+    const a = outline[i];
+    const b = outline[(i + 1) % n];
+    if (dist(a, b) < 1e-6 || dot(normalize(sub(b, a)), dir) < 0.9) continue;
+    const d = Math.abs(dot(sub(mid, a), perp(dir)));
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+  return best;
 }
 
 /** Splits `total` metres between the bands: fixed depths first (shrunk if needed), the rest shared. */

@@ -43,7 +43,7 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
         <Text as="p">Bấm “Ranh đất” ở thanh trên cùng để tải ảnh sổ đỏ hoặc nhập kích thước. Nếu nhà bị giải phóng đường, bật mục “Giải phóng mặt bằng” trong bảng “Ràng buộc” bên phải.</Text>
         <H>2. Dựng mặt sàn nhanh</H>
         <Text as="p">
-          Bấm <b>Tạo nhanh</b> (cây đũa phép ở thanh công cụ trái), chọn mẫu như “Tầng trệt nhà ở” hay “Văn phòng cho thuê”. Ứng dụng tự dựng tường, cửa, cầu thang, WC và nội thất vừa lô đất. Muốn đổi kích thước phòng thì sửa chiều sâu trong hộp thoại.
+          Bấm <b>Tạo nhanh</b> (cây đũa phép ở thanh công cụ trái), chọn mẫu như “Tầng trệt nhà ở” hay “Văn phòng cho thuê”. Ứng dụng tự dựng tường, cửa, cầu thang, WC và nội thất vừa lô đất. Muốn đổi kích thước phòng thì sửa chiều sâu trong hộp thoại. Muốn thêm từng phòng (phòng ngủ, WC, bếp…) vào phần sàn còn trống thì bấm <b>Phòng mẫu</b>: ứng dụng tự tìm chỗ có cửa sổ, yên tĩnh, không chắn lối đi và giải thích vì sao.
         </Text>
         <H>3. Chỉnh sửa</H>
         <Text as="p">

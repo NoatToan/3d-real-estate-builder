@@ -31,6 +31,7 @@ const FinanceView = dynamic(() => import("@/features/finance/FinanceView").then(
   loading: () => <PaneMessage>Đang tải tài chính…</PaneMessage>,
 });
 
+const RoomPlacerDialog = dynamic(() => import("@/features/roomplacer/RoomPlacerDialog").then((m) => m.RoomPlacerDialog), { ssr: false });
 const QuickFloorDialog = dynamic(() => import("@/features/quickfloor/QuickFloorDialog").then((m) => m.QuickFloorDialog), { ssr: false });
 const GuideDialog = dynamic(() => import("@/features/guide/GuideDialog").then((m) => m.GuideDialog), { ssr: false });
 
@@ -65,6 +66,7 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
   const view = useEditorStore((s) => s.view);
   const lotWizardOpen = useEditorStore((s) => s.lotWizardOpen);
   const quickFloorOpen = useEditorStore((s) => s.quickFloorOpen);
+  const roomPlacerOpen = useEditorStore((s) => s.roomPlacerOpen);
   const guideOpen = useEditorStore((s) => s.guideOpen);
   const saveStatus = useAutosave();
   useShortcuts(state === "ready");
@@ -157,6 +159,7 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
       </Row>
       {lotWizardOpen && <LotWizard onClose={() => useEditorStore.getState().setLotWizardOpen(false)} />}
       {quickFloorOpen && <QuickFloorDialog onClose={() => useEditorStore.getState().setQuickFloorOpen(false)} />}
+      {roomPlacerOpen && <RoomPlacerDialog onClose={() => useEditorStore.getState().setRoomPlacerOpen(false)} />}
       {guideOpen && <GuideDialog onClose={() => useEditorStore.getState().setGuideOpen(false)} />}
     </Col>
   );

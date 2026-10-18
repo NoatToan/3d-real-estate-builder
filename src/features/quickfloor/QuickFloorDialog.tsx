@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/Toast";
 import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useActiveFloor } from "@/features/plan/hooks";
-import { planQuickFloor, QUICK_TEMPLATES, quickFloorOutline, type QuickFloorPlan, type QuickZone } from "@/domain/quickFloor";
+import { outlineFrontEdge, planQuickFloor, QUICK_TEMPLATES, quickFloorOutline, type QuickFloorPlan, type QuickZone } from "@/domain/quickFloor";
 import { furnitureRect } from "@/domain/furniture";
 import { fmtLength, ROOM_TYPE_COLORS, ROOM_TYPE_LABELS } from "@/domain/labels";
 import { ROOM_TYPES, type Vec2 } from "@/domain/types";
@@ -85,12 +85,14 @@ export function QuickFloorDialog({ onClose }: { onClose: () => void }) {
   const [withStair, setWithStair] = useState(true);
 
   const outline = useMemo(() => quickFloorOutline(project), [project]);
+  // The select lists lot edges; the generator needs the matching edge of the (possibly clipped) outline.
+  const outlineEdge = useMemo(() => outlineFrontEdge(outline, project.lot.polygon, frontEdge), [outline, project.lot.polygon, frontEdge]);
   const lens = edgeLengths(project.lot.polygon);
   const plan = useMemo(
     () =>
       floor
         ? planQuickFloor(outline, zones, {
-            frontEdge,
+            frontEdge: outlineEdge,
             withStair,
             isGround: index === 0,
             floorHeight: floor.height,
@@ -98,12 +100,12 @@ export function QuickFloorDialog({ onClose }: { onClose: () => void }) {
             interiorThickness: project.defaults.wallThickness,
           })
         : null,
-    [outline, zones, frontEdge, withStair, index, floor, project.defaults],
+    [outline, zones, outlineEdge, withStair, index, floor, project.defaults],
   );
   // Size from the same generator, so Claude plans against the space it will actually get.
   const sizePlan = useMemo(
-    () => planQuickFloor(outline, [{ name: "x", type: "other", depth: 0 }], { frontEdge, withStair: false, isGround: false, floorHeight: 3, exteriorThickness: project.defaults.exteriorWallThickness, interiorThickness: project.defaults.wallThickness }),
-    [outline, frontEdge, project.defaults],
+    () => planQuickFloor(outline, [{ name: "x", type: "other", depth: 0 }], { frontEdge: outlineEdge, withStair: false, isGround: false, floorHeight: 3, exteriorThickness: project.defaults.exteriorWallThickness, interiorThickness: project.defaults.wallThickness }),
+    [outline, outlineEdge, project.defaults],
   );
   const aiContext = useMemo(() => (sizePlan ? aiContextFor(project, index, sizePlan) : null), [project, index, sizePlan]);
   if (!floor) return null;

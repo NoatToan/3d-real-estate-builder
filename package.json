@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "demo": "DEMO_CAPTURE=1 playwright test && node scripts/demo-gif.mjs",
     "postinstall": "node scripts/copy-assets.mjs",
     "predev": "node scripts/copy-assets.mjs",
     "prebuild": "node scripts/copy-assets.mjs"

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AppWindow, BrickWall, CircleHelp, DoorOpen, Footprints, Hand, Maximize2, MousePointer2, Ruler, Sofa, SquareDashed, Wand2 } from "lucide-react";
+import { AppWindow, BedDouble, BrickWall, CircleHelp, DoorOpen, Footprints, Hand, Maximize2, MousePointer2, Ruler, Sofa, SquareDashed, Wand2 } from "lucide-react";
 import { Box, Col, Text } from "@/components/ui/BasePrimitives";
 import { useEditorStore, type Tool } from "@/store/editorStore";
 
@@ -50,6 +50,9 @@ export function Toolbar() {
     <nav aria-label="Công cụ" className="flex w-[4.75rem] shrink-0 flex-col items-center gap-0.5 overflow-y-auto border-r border-line bg-surface py-2">
       <ToolButton label="Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" short="Tạo nhanh" onClick={() => ed.setQuickFloorOpen(true)}>
         <Wand2 size={18} />
+      </ToolButton>
+      <ToolButton label="Thêm phòng mẫu: tự tìm vị trí phù hợp" short="Phòng mẫu" onClick={() => ed.setRoomPlacerOpen(true)}>
+        <BedDouble size={18} />
       </ToolButton>
       <Box className="my-1 h-px w-10 bg-line" />
       <Col role="toolbar" aria-orientation="vertical" className="items-center gap-0.5">

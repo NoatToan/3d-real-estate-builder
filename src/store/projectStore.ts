@@ -56,6 +56,8 @@ export interface ProjectState {
 
   /** Replaces everything on a floor with a generated layout (one undo step). */
   applyQuickFloor: (floorId: Id, plan: QuickFloorPlan) => void;
+  /** Replaces a floor's layout (walls, rooms, openings, stairs, furniture) in one undo step. */
+  setFloorLayout: (floorId: Id, layout: Pick<Floor, "walls" | "rooms" | "openings" | "stairs" | "furniture">) => void;
   addFurniture: (floorId: Id, f: Furniture) => void;
   updateFurniture: (floorId: Id, id: Id, patch: Partial<Omit<Furniture, "id">>) => void;
 
@@ -322,6 +324,18 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       s.width = Math.min(5, Math.max(0.4, s.width));
       s.treadDepth = Math.min(0.6, Math.max(0.12, s.treadDepth));
       s.rotation = ((s.rotation % 360) + 360) % 360;
+    }),
+
+  setFloorLayout: (floorId, layout) =>
+    get().mutate((d) => {
+      const f = findFloor(d, floorId);
+      if (!f) return;
+      f.walls = layout.walls as Draft<Wall>[];
+      f.rooms = layout.rooms as Draft<Room>[];
+      f.openings = layout.openings as Draft<Opening>[];
+      f.stairs = layout.stairs as Draft<Stair>[];
+      f.furniture = layout.furniture as Draft<Furniture>[];
+      syncFloor(f);
     }),
 
   applyQuickFloor: (floorId, plan) =>

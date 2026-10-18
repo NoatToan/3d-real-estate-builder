@@ -33,11 +33,13 @@ export interface EditorState {
   /** Step-by-step help dialog. */
   guideOpen: boolean;
   quickFloorOpen: boolean;
+  roomPlacerOpen: boolean;
 
   requestFit: () => void;
   setLotWizardOpen: (open: boolean) => void;
   setGuideOpen: (open: boolean) => void;
   setQuickFloorOpen: (open: boolean) => void;
+  setRoomPlacerOpen: (open: boolean) => void;
   setView: (v: ViewMode) => void;
   setTool: (t: Tool) => void;
   setActiveFloor: (id: Id | null) => void;
@@ -73,6 +75,7 @@ const initial = {
   lotWizardOpen: false,
   guideOpen: false,
   quickFloorOpen: false,
+  roomPlacerOpen: false,
 };
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -81,6 +84,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setLotWizardOpen: (lotWizardOpen) => set({ lotWizardOpen }),
   setGuideOpen: (guideOpen) => set({ guideOpen }),
   setQuickFloorOpen: (quickFloorOpen) => set({ quickFloorOpen }),
+  setRoomPlacerOpen: (roomPlacerOpen) => set({ roomPlacerOpen }),
   setView: (view) => set({ view }),
   setTool: (tool) => set({ tool }),
   setActiveFloor: (activeFloorId) => set({ activeFloorId, selection: null }),
