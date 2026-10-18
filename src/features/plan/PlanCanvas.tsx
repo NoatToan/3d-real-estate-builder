@@ -25,6 +25,7 @@ import { add, dist, normalize, round, samePoint, scale as vscale, sub } from "@/
 import { isTypingTarget } from "@/features/editor/useShortcuts";
 import { ObjectActions } from "@/features/editor/ObjectActions";
 import { entityOutline, findEntity } from "@/domain/selection";
+import { DIRECTION_LABELS, sectorWedges, STAR_INFO } from "@/domain/fengShui";
 import { exportRegistry, activeFloorOf, useElementSize, useLotImage } from "./hooks";
 import {
   flat,
@@ -596,6 +597,9 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
   const singleWall = selectedIds.size === 1 ? floor.walls.find((w) => selectedIds.has(w.id)) : undefined;
   const singleManualRoom = selectedIds.size === 1 ? floor.rooms.find((r) => selectedIds.has(r.id) && r.source === "manual") : undefined;
 
+  // Bát trạch sectors around the centre of this floor (Phong thuỷ overlay).
+  const wedges = show.fengShui && project.fengShui.facing ? sectorWedges(project, floor) : [];
+
   // Floating actions next to the selection (rotate, size, duplicate, delete…), in screen px.
   const actionAnchor = (() => {
     if (tool !== "select" || !selectedIds.size) return null;
@@ -638,6 +642,18 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
             {imgTransform && lotImage && <KImage image={lotImage} x={imgTransform.x} y={imgTransform.y} scaleX={imgTransform.s} scaleY={imgTransform.s} opacity={0.45} />}
             {show.grid && <GridShape vp={vp} width={size.width} height={size.height} />}
             <LotShape polygon={lotPoly} buildable={buildable} roadCut={roadCut} scale={vp.scale} showDims={show.dimensions} />
+            {wedges.map((w) => {
+              const color = w.star == null ? "#64748b" : STAR_INFO[w.star].good ? "#16a34a" : "#dc2626";
+              return <Line key={w.dir} points={flat(w.polygon)} closed fill={color} opacity={0.07} stroke={color} strokeWidth={1} dash={[4, 4]} strokeScaleEnabled={false} />;
+            })}
+            {wedges.map((w) => {
+              const text = `${DIRECTION_LABELS[w.dir]}${w.star ? ` · ${STAR_INFO[w.star].label}` : ""}`;
+              // Push side labels out by half their width so they don't run over the house.
+              const dx = w.labelAt.x - w.polygon[0].x;
+              const half = (text.length * 11 * 0.62 + 8) / vp.scale / 2;
+              const at = Math.abs(dx) > 0.3 ? { x: w.labelAt.x + Math.sign(dx) * half, y: w.labelAt.y } : w.labelAt;
+              return <Label key={`l-${w.dir}`} at={at} text={text} scale={vp.scale} size={11} color={w.star == null ? "#475569" : STAR_INFO[w.star].good ? "#15803d" : "#b91c1c"} bold />;
+            })}
             {show.ghostBelow && below && <WallsShape walls={below.walls} openings={[]} selected={EMPTY} errors={EMPTY} hoverId={null} ghost />}
           </Layer>
           <Layer listening={false}>

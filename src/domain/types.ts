@@ -241,6 +241,8 @@ export interface FinanceInputs {
   loanRatePct: number;
   loanYears: number;
   scenario: FinanceScenario;
+  /** Unit prices (đồng) the user changed in "Bóc khối lượng", by material key. */
+  materialPrices: Record<string, number>;
 }
 
 export interface Project {
@@ -258,6 +260,19 @@ export interface Project {
     exteriorWallThickness: number;
   };
   finance: FinanceInputs;
+  fengShui: FengShuiInputs;
+}
+
+export const DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
+export type Direction = (typeof DIRECTIONS)[number];
+
+/** Owner data for the Bát trạch check (Phong thuỷ). */
+export interface FengShuiInputs {
+  /** Direction the front door looks out to (hướng nhà); null = not set. */
+  facing: Direction | null;
+  /** Lunar birth year of the owner (gia chủ). */
+  birthYear: number | null;
+  gender: "male" | "female";
 }
 
 export interface ProjectMeta {
