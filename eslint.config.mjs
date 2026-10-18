@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "playwright-report/**",
     "test-results/**",
+    // Local Python tooling (cloned TripoSR, venv, model weights).
+    "tools/**/.work/**",
   ]),
 ]);
 
