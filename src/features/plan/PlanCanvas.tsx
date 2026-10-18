@@ -127,6 +127,8 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
   const [lengthText, setLengthText] = useState<string | null>(null);
   const [spaceDown, setSpaceDown] = useState(false);
   const drag = useRef<Drag | null>(null);
+  /** Two-finger pinch on touch screens: last finger distance and midpoint (screen px). */
+  const pinch = useRef<{ d: number; c: Vec2 } | null>(null);
   const shiftRef = useRef(false);
   const altRef = useRef(false);
 
@@ -558,6 +560,31 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
     setVp({ scale: next, x: p.x - w.x * next, y: p.y - w.y * next });
   };
 
+  // Phones and tablets: pinch with two fingers to zoom (and pan with the midpoint).
+  const onTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+    const t = e.evt.touches;
+    const box = containerRef.current?.getBoundingClientRect();
+    if (t.length !== 2 || !box) {
+      pinch.current = null;
+      return;
+    }
+    e.evt.preventDefault();
+    const a = { x: t[0].clientX - box.left, y: t[0].clientY - box.top };
+    const b = { x: t[1].clientX - box.left, y: t[1].clientY - box.top };
+    const now = { d: dist(a, b), c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
+    // The first finger may have started a drag: a pinch is never an edit.
+    if (drag.current) {
+      if (drag.current.kind !== "pan" && drag.current.began) store().cancel();
+      drag.current = null;
+    }
+    const prev = pinch.current;
+    pinch.current = now;
+    if (!prev || prev.d < 1) return;
+    const next = Math.min(600, Math.max(2, vp.scale * (now.d / prev.d)));
+    const w = toWorld(prev.c.x, prev.c.y);
+    setVp({ scale: next, x: now.c.x - w.x * next, y: now.c.y - w.y * next });
+  };
+
   const onDblClick = () => {
     if (tool === "room" && draft.length >= 3) finishRoom(draft);
     else if (tool === "wall") setDraft([]);
@@ -635,6 +662,8 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
             setCursor(null);
           }}
           onWheel={onWheel}
+          onTouchMove={onTouchMove}
+          onTouchEnd={() => (pinch.current = null)}
           onDblClick={onDblClick}
           onContextMenu={onContextMenu}
         >

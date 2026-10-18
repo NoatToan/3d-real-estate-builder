@@ -51,6 +51,16 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await shot(page, "02-new-project");
   await dialog.getByRole("button", { name: "Tạo dự án" }).click();
   await page.waitForURL(/\/editor\/\?id=/);
+  // First visit: 4 coach marks point at the main areas (shown once, skippable).
+  const tour = page.getByRole("dialog", { name: "Hướng dẫn nhanh" });
+  await expect(tour).toContainText("Bắt đầu ở đây");
+  await shot(page, "03a-first-run-tour");
+  for (const title of ["Bảng điều khiển", "Xem 2D, 3D, tài chính", "Các tầng"]) {
+    await tour.getByRole("button", { name: "Tiếp" }).click();
+    await expect(tour).toContainText(title);
+  }
+  await tour.getByRole("button", { name: "Bắt đầu dùng" }).click();
+  await expect(tour).toBeHidden();
   await expect(page.getByText("Các bước dựng nhà")).toBeVisible();
   // Empty floor: the plan offers the ways to start instead of a blank grid.
   const startCard = page.getByRole("region", { name: "Bắt đầu dựng tầng" });
@@ -213,8 +223,48 @@ test("nhà mẫu: mở một mẫu dựng sẵn và sửa tiếp", async ({ page
   await shot(page, "18-samples");
   await gallery.getByRole("button", { name: "Dùng mẫu Nhà tóp hậu 5 tầng cho thuê" }).click();
   await page.waitForURL(/\/editor\/\?id=/);
+  await page.getByRole("dialog", { name: "Hướng dẫn nhanh" }).getByRole("button", { name: "Bỏ qua" }).click();
   await expect(page.getByRole("tab", { name: /Tầng 5/ })).toBeVisible();
+  // The tour stays dismissed and the open panel tab is remembered after a reload.
+  await page.getByRole("tab", { name: "Phong thuỷ" }).click();
+  await page.reload();
+  await expect(page.getByRole("tab", { name: /Tầng 5/ })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Hướng dẫn nhanh" })).toBeHidden();
+  await expect(page.getByRole("tab", { name: "Phong thuỷ" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: /Bắt đầu/ }).click();
   await page.getByRole("radio", { name: "2D + 3D", exact: true }).click();
   await page.waitForTimeout(2500);
   await shot(page, "19-sample-open");
+});
+
+test.describe("điện thoại", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+
+  test("công cụ ở thanh dưới, bảng điều khiển dạng ngăn kéo", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Dùng mẫu Nhà phố 5×20, 4 tầng có gara" }).click();
+    await page.waitForURL(/\/editor\/\?id=/);
+    const tour = page.getByRole("dialog", { name: "Hướng dẫn nhanh" });
+    await expect(tour).toBeVisible();
+    await tour.getByRole("button", { name: "Bỏ qua" }).click();
+
+    // Tools at the bottom of the screen, within thumb reach.
+    const tools = page.getByRole("navigation", { name: "Công cụ" });
+    const box = (await tools.boundingBox())!;
+    expect(box.y + box.height).toBeGreaterThan(800);
+    expect(box.width).toBeGreaterThan(380);
+    await expect(page.getByRole("radio", { name: "2D + 3D" })).toBeVisible();
+    await page.getByRole("radio", { name: "2D", exact: true }).click();
+    await shot(page, "20-mobile-plan");
+
+    // Control panel opens as a bottom sheet and closes again.
+    await page.getByRole("button", { name: "Bảng điều khiển" }).click();
+    const sheet = page.getByRole("complementary", { name: "Bảng điều khiển" });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("tab", { name: /Kiểm tra/ }).click();
+    await expect(sheet).toContainText("Thống kê diện tích");
+    await shot(page, "21-mobile-panel");
+    await sheet.getByRole("button", { name: "Thu gọn bảng điều khiển" }).click();
+    await expect(sheet).toBeHidden();
+  });
 });

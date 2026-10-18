@@ -31,6 +31,10 @@ export interface EditorState {
   viewer: { hiddenFloorIds: Id[]; explode: number; upToActive: boolean; roof: boolean; cutaway: boolean };
   /** Tab shown in the control panel; switches to "edit" when something is selected or a drawing tool is picked. */
   panelTab: PanelTab;
+  /** Control panel shown (desktop: column next to the tools; phone: bottom sheet). */
+  panelOpen: boolean;
+  /** First-run coach marks already seen or skipped. */
+  tourDone: boolean;
   panels: { guide: boolean; issues: boolean; stats: boolean; constraints: boolean; display: boolean; fengShui: boolean };
   /** Incremented to ask the 2D/3D views to zoom to fit. */
   fitRequest: number;
@@ -61,6 +65,8 @@ export interface EditorState {
   toggleFloorVisibility: (id: Id) => void;
   togglePanel: (p: keyof EditorState["panels"]) => void;
   setPanelTab: (t: PanelTab) => void;
+  setPanelOpen: (open: boolean) => void;
+  setTourDone: (done: boolean) => void;
   reset: () => void;
 }
 
@@ -77,6 +83,8 @@ const initial = {
   show: { ghostBelow: true, dimensions: true, lotImage: false, grid: true, roomLabels: true, fengShui: true },
   viewer: { hiddenFloorIds: [] as Id[], explode: 0, upToActive: false, roof: false, cutaway: true },
   panelTab: "start" as PanelTab,
+  panelOpen: true,
+  tourDone: false,
   panels: { guide: true, issues: true, stats: true, constraints: true, display: true, fengShui: true },
   fitRequest: 0,
   lotWizardOpen: false,
@@ -115,5 +123,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
   togglePanel: (p) => set({ panels: { ...get().panels, [p]: !get().panels[p] } }),
   setPanelTab: (panelTab) => set({ panelTab }),
+  setPanelOpen: (panelOpen) => set({ panelOpen }),
+  setTourDone: (tourDone) => set({ tourDone }),
   reset: () => set({ ...initial }),
 }));

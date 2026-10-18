@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Route } from "lucide-react";
+import { useEditorStore } from "@/store/editorStore";
 import { Box, Col, Text, TextMuted } from "@/components/ui/BasePrimitives";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -32,9 +34,20 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
       size="lg"
       title="Hướng dẫn sử dụng"
       footer={
-        <Button variant="primary" onClick={onClose}>
-          Đã hiểu
-        </Button>
+        <>
+          <Button
+            icon={<Route size={16} />}
+            onClick={() => {
+              useEditorStore.getState().setTourDone(false);
+              onClose();
+            }}
+          >
+            Xem lại hướng dẫn nhanh
+          </Button>
+          <Button variant="primary" onClick={onClose}>
+            Đã hiểu
+          </Button>
+        </>
       }
     >
       <Col className="gap-1 text-sm text-ink">

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Compass, ListChecks, PanelLeftClose, Settings2, ShieldCheck, SquarePen } from "lucide-react";
+import { ChevronDown, Compass, ListChecks, PanelLeftClose, Settings2, ShieldCheck, SquarePen } from "lucide-react";
 import { Col, Row, Text } from "@/components/ui/BasePrimitives";
 import { IconButton } from "@/components/ui/Button";
 import { useEditorStore, type PanelTab } from "@/store/editorStore";
@@ -23,7 +23,7 @@ const TABS: { id: PanelTab; label: string; icon: ReactNode; hint: string }[] = [
  * Bảng điều khiển: one topic at a time (tabs) instead of one long column, so a first-time user
  * sees a handful of choices. Selecting an object or picking a drawing tool opens "Chỉnh sửa".
  */
-export function ControlPanel({ issues, onCollapse }: { issues: Issue[]; onCollapse: () => void }) {
+export function ControlPanel({ issues, onCollapse, sheet = false }: { issues: Issue[]; onCollapse: () => void; sheet?: boolean }) {
   const tab = useEditorStore((s) => s.panelTab);
   const setTab = useEditorStore((s) => s.setPanelTab);
   const project = useProjectStore((s) => s.project)!;
@@ -32,7 +32,7 @@ export function ControlPanel({ issues, onCollapse }: { issues: Issue[]; onCollap
   const stepsDone = [true, project.floors.some((f) => f.walls.length), project.floors.some((f) => f.openings.length), project.floors.some((f) => f.furniture.length), project.floors.length > 1].filter(Boolean).length;
 
   return (
-    <aside aria-label="Bảng điều khiển" className="flex w-80 shrink-0 flex-col border-r border-line bg-surface">
+    <aside data-tour="panel" aria-label="Bảng điều khiển" className={sheet ? "flex h-full w-full flex-col bg-surface" : "flex w-80 shrink-0 flex-col border-r border-line bg-surface"}>
       <Row className="items-center border-b border-line">
         <Row role="tablist" aria-label="Bảng điều khiển" className="min-w-0 flex-1">
           {TABS.map((t) => {
@@ -60,7 +60,7 @@ export function ControlPanel({ issues, onCollapse }: { issues: Issue[]; onCollap
           })}
         </Row>
         <IconButton label="Thu gọn bảng điều khiển" className="mx-0.5 h-7 w-7 shrink-0" onClick={onCollapse}>
-          <PanelLeftClose size={15} />
+          {sheet ? <ChevronDown size={16} /> : <PanelLeftClose size={15} />}
         </IconButton>
       </Row>
       <Col role="tabpanel" aria-label={TABS.find((t) => t.id === tab)?.label} className="min-h-0 flex-1 overflow-y-auto">

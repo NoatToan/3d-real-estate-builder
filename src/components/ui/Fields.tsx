@@ -235,11 +235,14 @@ export function SegmentedControl<T extends string>({
   options,
   onChange,
   label,
+  compact = false,
 }: {
   value: T;
   options: readonly { value: T; label: string; icon?: ReactNode }[];
   onChange: (v: T) => void;
   label: string;
+  /** Icons only (labels kept for screen readers and tooltips), for narrow screens. */
+  compact?: boolean;
 }) {
   return (
     <Row role="radiogroup" aria-label={label} className="inline-flex rounded-md border border-line bg-surface p-0.5">
@@ -255,7 +258,7 @@ export function SegmentedControl<T extends string>({
           }`}
         >
           {o.icon}
-          {o.label}
+          {compact && o.icon ? <span className="sr-only">{o.label}</span> : o.label}
         </button>
       ))}
     </Row>
