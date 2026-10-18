@@ -80,7 +80,7 @@ export function FloorBar() {
   };
 
   return (
-    <Row className="h-11 shrink-0 items-center gap-1 border-b border-line bg-surface px-2">
+    <Row data-tour="floors" className="h-11 shrink-0 items-center gap-1 border-b border-line bg-surface px-2">
       <Row role="tablist" aria-label="Các tầng" className="min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         {project.floors.map((f) => {
           const isActive = f.id === active?.id;

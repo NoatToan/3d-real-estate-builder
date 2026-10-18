@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { AppWindow, BedDouble, BrickWall, CircleHelp, DoorOpen, Footprints, Hand, Maximize2, MousePointer2, Ruler, Sofa, SquareDashed, Wand2 } from "lucide-react";
-import { Col, Text } from "@/components/ui/BasePrimitives";
+import { Box, Text } from "@/components/ui/BasePrimitives";
+import { useIsMobile } from "./useIsMobile";
 import { useEditorStore, type Tool } from "@/store/editorStore";
 
 export const TOOLS: { tool: Tool; label: string; short: string; key: string; icon: ReactNode; hint: string }[] = [
@@ -25,7 +26,7 @@ function ToolButton({ label, short, shortcut, active, cta, onClick, children }: 
       aria-pressed={active}
       title={shortcut ? `${label} (${shortcut})` : label}
       onClick={onClick}
-      className={`flex w-16 flex-col items-center gap-0.5 rounded-md px-1 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
+      className={`flex w-16 shrink-0 flex-col items-center gap-0.5 rounded-md px-1 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
         active ? "bg-brand-600 text-white" : cta ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100" : "text-ink hover:bg-surface-muted"
       }`}
     >
@@ -38,7 +39,9 @@ function ToolButton({ label, short, shortcut, active, cta, onClick, children }: 
 /** Viewing helpers, kept apart from the drawing tools so the main group stays short. */
 const SECONDARY: readonly Tool[] = ["pan", "measure"];
 
-function GroupLabel({ children }: { children: ReactNode }) {
+function GroupLabel({ children, horizontal }: { children: ReactNode; horizontal?: boolean }) {
+  // Bottom bar on phones: a thin divider instead of a caption.
+  if (horizontal) return <Text aria-hidden className="mx-0.5 h-10 w-px shrink-0 bg-line" />;
   return <Text className="mt-1.5 w-full border-t border-line pt-1 text-center text-[9px] font-semibold uppercase tracking-wider text-ink-faint first:mt-0 first:border-t-0 first:pt-0">{children}</Text>;
 }
 
@@ -52,25 +55,36 @@ export function Toolbar() {
   };
   const requestFit = useEditorStore((s) => s.requestFit);
   const ed = useEditorStore.getState();
+  const h = useIsMobile();
+  const group = h ? "flex flex-row items-center gap-0.5" : "flex flex-col items-center gap-0.5";
 
   return (
-    <nav aria-label="Công cụ" className="flex w-[4.75rem] shrink-0 flex-col items-center gap-0.5 overflow-y-auto border-r border-line bg-surface py-2">
-      <GroupLabel>Tạo</GroupLabel>
-      <ToolButton cta label="Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" short="Tạo nhanh" onClick={() => ed.setQuickFloorOpen(true)}>
-        <Wand2 size={18} />
-      </ToolButton>
-      <ToolButton cta label="Thêm phòng mẫu: tự tìm vị trí phù hợp" short="Phòng mẫu" onClick={() => ed.setRoomPlacerOpen(true)}>
-        <BedDouble size={18} />
-      </ToolButton>
-      <GroupLabel>Vẽ</GroupLabel>
-      <Col role="toolbar" aria-orientation="vertical" className="items-center gap-0.5">
+    <nav
+      aria-label="Công cụ"
+      className={
+        h
+          ? "flex h-16 w-full shrink-0 flex-row items-center gap-0.5 overflow-x-auto border-t border-line bg-surface px-1 pb-[env(safe-area-inset-bottom)]"
+          : "flex w-[4.75rem] shrink-0 flex-col items-center gap-0.5 overflow-y-auto border-r border-line bg-surface py-2"
+      }
+    >
+      <GroupLabel horizontal={h}>Tạo</GroupLabel>
+      <Box data-tour="create" className={group}>
+        <ToolButton cta label="Tạo nhanh mặt sàn từ mẫu hoặc mô tả bằng AI" short="Tạo nhanh" onClick={() => ed.setQuickFloorOpen(true)}>
+          <Wand2 size={18} />
+        </ToolButton>
+        <ToolButton cta label="Thêm phòng mẫu: tự tìm vị trí phù hợp" short="Phòng mẫu" onClick={() => ed.setRoomPlacerOpen(true)}>
+          <BedDouble size={18} />
+        </ToolButton>
+      </Box>
+      <GroupLabel horizontal={h}>Vẽ</GroupLabel>
+      <Box role="toolbar" aria-orientation={h ? "horizontal" : "vertical"} className={group}>
         {TOOLS.filter((t) => !SECONDARY.includes(t.tool)).map((t) => (
           <ToolButton key={t.tool} label={t.label} short={t.short} shortcut={t.key} active={tool === t.tool} onClick={() => setTool(t.tool)}>
             {t.icon}
           </ToolButton>
         ))}
-      </Col>
-      <GroupLabel>Xem</GroupLabel>
+      </Box>
+      <GroupLabel horizontal={h}>Xem</GroupLabel>
       {TOOLS.filter((t) => SECONDARY.includes(t.tool)).map((t) => (
         <ToolButton key={t.tool} label={t.label} short={t.short} shortcut={t.key} active={tool === t.tool} onClick={() => setTool(t.tool)}>
           {t.icon}

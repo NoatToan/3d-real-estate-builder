@@ -14,6 +14,7 @@ import { loadImage } from "@/persistence/db";
 import { exportProjectFile } from "@/persistence/serialize";
 import { downloadBlob, downloadDataUrl, slugify } from "@/ocr/image";
 import { exportRegistry } from "@/features/plan/hooks";
+import { useIsMobile } from "./useIsMobile";
 
 const VIEWS: { value: ViewMode; label: string; icon: React.ReactNode }[] = [
   { value: "2d", label: "2D", icon: <Grid2x2 size={14} /> },
@@ -68,7 +69,7 @@ function ProjectNameInput({ name }: { name: string }) {
           e.currentTarget.blur();
         }
       }}
-      className="h-8 w-64 truncate rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-ink hover:border-line focus:border-brand-500 focus:outline-none focus-visible:shadow-focus"
+      className="h-8 w-28 min-w-0 truncate sm:w-64 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-ink hover:border-line focus:border-brand-500 focus:outline-none focus-visible:shadow-focus"
     />
   );
 }
@@ -116,8 +117,8 @@ function ExportMenu() {
 
   return (
     <Box ref={ref} className="relative">
-      <Button size="sm" icon={<Download size={16} />} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        Xuất
+      <Button size="sm" icon={<Download size={16} />} aria-label="Xuất" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="hidden sm:inline">Xuất</span>
       </Button>
       {open && (
         <Col role="menu" className="absolute right-0 top-9 z-30 w-56 overflow-hidden rounded-lg border border-line bg-surface py-1 shadow-lg">
@@ -137,15 +138,16 @@ export function EditorHeader({ saveStatus }: { saveStatus: SaveStatus }) {
   const redo = useProjectStore((s) => s.redo);
   const view = useEditorStore((s) => s.view);
   const setView = useEditorStore((s) => s.setView);
+  const mobile = useIsMobile();
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-2">
+    <header className="flex h-12 shrink-0 items-center gap-1 border-b border-line bg-surface px-1 sm:gap-2 sm:px-2">
       <Link href="/" aria-label="Về danh sách dự án" title="Về danh sách dự án" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-surface-muted">
         <ArrowLeft size={18} />
       </Link>
       <ProjectName />
-      <SaveIndicator status={saveStatus} />
-      <Row className="ml-2 items-center gap-0.5 border-l border-line pl-2">
+      {!mobile && <SaveIndicator status={saveStatus} />}
+      <Row className={`items-center gap-0.5 border-l border-line ${mobile ? "ml-0.5 pl-0.5" : "ml-2 pl-2"}`}>
         <IconButton label="Hoàn tác" shortcut="Ctrl+Z" disabled={!canUndo} onClick={undo}>
           <Undo2 size={18} />
         </IconButton>
@@ -154,10 +156,18 @@ export function EditorHeader({ saveStatus }: { saveStatus: SaveStatus }) {
         </IconButton>
       </Row>
       <Box className="flex-1" />
-      <Button size="sm" icon={<MapIcon size={16} />} onClick={() => useEditorStore.getState().setLotWizardOpen(true)}>
-        Ranh đất
-      </Button>
-      <SegmentedControl label="Chế độ xem" value={view} options={VIEWS} onChange={setView} />
+      {mobile ? (
+        <IconButton label="Ranh đất" onClick={() => useEditorStore.getState().setLotWizardOpen(true)}>
+          <MapIcon size={18} />
+        </IconButton>
+      ) : (
+        <Button size="sm" icon={<MapIcon size={16} />} onClick={() => useEditorStore.getState().setLotWizardOpen(true)}>
+          Ranh đất
+        </Button>
+      )}
+      <Box data-tour="views">
+        <SegmentedControl label="Chế độ xem" value={view} options={VIEWS} onChange={setView} compact={mobile} />
+      </Box>
       <ExportMenu />
     </header>
   );

@@ -3,8 +3,8 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { PanelLeftOpen } from "lucide-react";
-import { Box, Col, Row, TextMuted } from "@/components/ui/BasePrimitives";
+import { PanelLeftOpen, SlidersHorizontal } from "lucide-react";
+import { Box, Col, TextMuted } from "@/components/ui/BasePrimitives";
 import { Button, IconButton } from "@/components/ui/Button";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useProjectStore } from "@/store/projectStore";
@@ -17,6 +17,9 @@ import { EditorHeader } from "./EditorHeader";
 import { Toolbar } from "./Toolbar";
 import { FloorBar } from "./FloorBar";
 import { ControlPanel } from "./ControlPanel";
+import { useIsMobile, MOBILE_QUERY } from "./useIsMobile";
+import { bindUiPrefs } from "@/store/uiPrefs";
+import { FirstRunTour } from "@/features/guide/FirstRunTour";
 import { FullScreenMessage } from "./FullScreenMessage";
 import { useShortcuts } from "./useShortcuts";
 
@@ -67,17 +70,24 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
   const quickFloorOpen = useEditorStore((s) => s.quickFloorOpen);
   const roomPlacerOpen = useEditorStore((s) => s.roomPlacerOpen);
   const guideOpen = useEditorStore((s) => s.guideOpen);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const panelOpen = useEditorStore((s) => s.panelOpen);
+  const mobile = useIsMobile();
+  const setPanelOpen = useEditorStore((s) => s.setPanelOpen);
   const saveStatus = useAutosave();
   useShortcuts(state === "ready");
 
   useEffect(() => {
     let cancelled = false;
+    let unbindPrefs: (() => void) | null = null;
     loadProject(projectId)
       .then((p) => {
         if (cancelled) return;
         if (!p) return setState("missing");
         useEditorStore.getState().reset();
+        unbindPrefs?.();
+        unbindPrefs = bindUiPrefs();
+        // On a phone the panel would cover most of the plan: start with it closed.
+        if (window.matchMedia(MOBILE_QUERY).matches) useEditorStore.getState().setPanelOpen(false);
         useProjectStore.getState().load(p);
         useEditorStore.getState().setActiveFloor(p.floors[0].id);
         // Nothing to look at in 3D yet on an empty project: start on the plan, 3D joins once walls exist.
@@ -91,6 +101,7 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
       });
     return () => {
       cancelled = true;
+      unbindPrefs?.();
       useProjectStore.getState().close();
     };
   }, [projectId, startWithLot]);
@@ -130,7 +141,7 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
   return (
     <Col className="h-screen overflow-hidden bg-canvas">
       <EditorHeader saveStatus={saveStatus} />
-      <Row className="min-h-0 flex-1">
+      <Box className={`flex min-h-0 flex-1 ${mobile ? "flex-col" : "flex-row"}`}>
         {view === "finance" ? (
           <Box className="relative min-w-0 flex-1">
             <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi tài chính" error={e} reset={r} />}>
@@ -139,42 +150,56 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
           </Box>
         ) : (
           <>
-            <Toolbar />
+            {!mobile && <Toolbar />}
             {/* Properties sit right next to the tools, so the eye and mouse stay on the left. */}
-            {panelOpen ? (
-              <ControlPanel issues={issues} onCollapse={() => setPanelOpen(false)} />
-            ) : (
-              <Box className="shrink-0 border-r border-line bg-surface p-1">
-                <IconButton label="Mở bảng điều khiển" onClick={() => setPanelOpen(true)}>
-                  <PanelLeftOpen size={16} />
-                </IconButton>
-              </Box>
-            )}
-            <Col className="min-w-0 flex-1">
+            {!mobile &&
+              (panelOpen ? (
+                <ControlPanel issues={issues} onCollapse={() => setPanelOpen(false)} />
+              ) : (
+                <Box className="shrink-0 border-r border-line bg-surface p-1">
+                  <IconButton label="Mở bảng điều khiển" onClick={() => setPanelOpen(true)}>
+                    <PanelLeftOpen size={16} />
+                  </IconButton>
+                </Box>
+              ))}
+            <Col className="relative min-h-0 min-w-0 flex-1">
               <FloorBar />
-              <Row className="min-h-0 flex-1">
+              <Box className={`flex min-h-0 flex-1 ${mobile ? "flex-col" : "flex-row"}`}>
                 {view !== "3d" && (
-                  <Box className="relative min-w-0 flex-1">
+                  <Box className="relative min-h-0 min-w-0 flex-1">
                     <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi mặt bằng 2D" error={e} reset={r} />}>
                       <PlanCanvas issues={issues} />
                     </ErrorBoundary>
                   </Box>
                 )}
                 {view !== "2d" && (
-                  <Box className={`relative min-w-0 flex-1 ${view === "split" ? "border-l border-line" : ""}`}>
+                  <Box className={`relative min-h-0 min-w-0 flex-1 ${view === "split" ? (mobile ? "border-t border-line" : "border-l border-line") : ""}`}>
                     <ErrorBoundary fallback={(e, r) => <PaneError title="Lỗi xem 3D" error={e} reset={r} />}>
                       <Viewer3D />
                     </ErrorBoundary>
                   </Box>
                 )}
-              </Row>
+              </Box>
+              {/* Phones: the control panel is a bottom sheet over the drawing. */}
+              {mobile &&
+                (panelOpen ? (
+                  <Box className="absolute inset-x-0 bottom-0 z-30 h-[62%] overflow-hidden rounded-t-2xl border-t border-line shadow-2xl">
+                    <ControlPanel sheet issues={issues} onCollapse={() => setPanelOpen(false)} />
+                  </Box>
+                ) : (
+                  <Button size="sm" variant="primary" className="absolute bottom-3 left-3 z-30 shadow-lg" icon={<SlidersHorizontal size={16} />} onClick={() => setPanelOpen(true)}>
+                    Bảng điều khiển
+                  </Button>
+                ))}
             </Col>
+            {mobile && <Toolbar />}
           </>
         )}
-      </Row>
+      </Box>
       {lotWizardOpen && <LotWizard onClose={() => useEditorStore.getState().setLotWizardOpen(false)} />}
       {quickFloorOpen && <QuickFloorDialog onClose={() => useEditorStore.getState().setQuickFloorOpen(false)} />}
       {roomPlacerOpen && <RoomPlacerDialog onClose={() => useEditorStore.getState().setRoomPlacerOpen(false)} />}
+      {!lotWizardOpen && !quickFloorOpen && !roomPlacerOpen && !guideOpen && view !== "finance" && <FirstRunTour />}
       {guideOpen && <GuideDialog onClose={() => useEditorStore.getState().setGuideOpen(false)} />}
     </Col>
   );
