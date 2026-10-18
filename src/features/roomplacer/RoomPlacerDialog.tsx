@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/Toast";
 import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
 import { useActiveFloor } from "@/features/plan/hooks";
+import { RoomTypeBadge } from "@/features/editor/roomIcons";
 import { applyRoomPlacement, autoPlaceRooms, ensureShell, findRoomPlacements, FREE_ROOM_TYPES, ROOM_PROGRAMMES, ROOM_TEMPLATES, roomTemplate, type RoomPlacement } from "@/domain/roomPlacer";
 import { furnitureRect } from "@/domain/furniture";
 import { fmtArea, ROOM_TYPE_COLORS } from "@/domain/labels";
@@ -186,7 +187,7 @@ export function RoomPlacerDialog({ onClose }: { onClose: () => void }) {
                       className={`rounded-lg border p-2 text-left transition-colors ${templateId === t.id ? "border-brand-500 bg-brand-50 ring-2 ring-brand-200" : "border-line hover:bg-surface-muted"}`}
                     >
                       <Text className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                        <Text className="h-3 w-3 shrink-0 rounded-sm border border-line" style={{ background: ROOM_TYPE_COLORS[t.type] }} />
+                        <RoomTypeBadge type={t.type} />
                         {t.label}
                       </Text>
                       <TextMuted className="block text-xs">
@@ -223,7 +224,12 @@ export function RoomPlacerDialog({ onClose }: { onClose: () => void }) {
                       className={`rounded-lg border p-2 text-left transition-colors ${programmeId === p.id ? "border-brand-500 bg-brand-50 ring-2 ring-brand-200" : "border-line hover:bg-surface-muted"}`}
                     >
                       <Text className="block text-sm font-semibold text-ink">{p.label}</Text>
-                      <TextMuted className="block text-xs">{p.rooms.map((id) => roomTemplate(id).label).join(" · ")}</TextMuted>
+                      <Row className="mt-1 flex-wrap items-center gap-1">
+                        {p.rooms.map((id, k) => (
+                          <RoomTypeBadge key={k} type={roomTemplate(id).type} />
+                        ))}
+                        <TextMuted className="ml-1 text-xs">{p.rooms.map((id) => roomTemplate(id).label).join(" · ")}</TextMuted>
+                      </Row>
                     </button>
                   ))}
                 </Box>
@@ -234,7 +240,7 @@ export function RoomPlacerDialog({ onClose }: { onClose: () => void }) {
 
           <Col className="gap-2">
             {!hasFree ? (
-              <TextMuted className="text-sm">Không còn phần sàn trống: mọi phòng trên tầng đã có công năng. Đổi một phòng về loại &quot;Khác&quot; ở bảng bên phải, hoặc dùng mẫu &quot;Sàn trống&quot; trong Tạo nhanh.</TextMuted>
+              <TextMuted className="text-sm">Không còn phần sàn trống: mọi phòng trên tầng đã có công năng. Đổi một phòng về loại &quot;Khác&quot; ở Bảng điều khiển, hoặc dùng mẫu &quot;Sàn trống&quot; trong Tạo nhanh.</TextMuted>
             ) : mode === "one" ? (
               <>
                 <Preview floor={base.floor} candidates={candidates} selected={Math.min(selected, candidates.length - 1)} highlight={[]} />

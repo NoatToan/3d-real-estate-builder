@@ -18,6 +18,7 @@ import { bbox, edgeLengths } from "@/geometry/polygon";
 import { generateStair } from "@/geometry/stairs";
 import { aiContextFor, aiToZones } from "@/domain/aiLayout";
 import { AiBrief } from "./AiBrief";
+import { ZoneStrip } from "@/features/editor/roomIcons";
 
 /** Schematic of the generated floor: walls, stair, furniture and room names. */
 function Preview({ plan, outline, floorHeight }: { plan: QuickFloorPlan; outline: Vec2[]; floorHeight: number }) {
@@ -169,6 +170,7 @@ export function QuickFloorDialog({ onClose }: { onClose: () => void }) {
             >
               <Text className="block text-sm font-semibold text-ink">{t.label}</Text>
               <TextMuted className="block text-xs">{t.description}</TextMuted>
+              <ZoneStrip zones={t.zones} />
             </button>
           ))}
         </Box>

@@ -3,8 +3,9 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Box, Col, Row, TextMuted } from "@/components/ui/BasePrimitives";
-import { Button } from "@/components/ui/Button";
+import { PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from "lucide-react";
+import { Box, Col, Row, Text, TextMuted } from "@/components/ui/BasePrimitives";
+import { Button, IconButton } from "@/components/ui/Button";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useProjectStore } from "@/store/projectStore";
 import { useEditorStore } from "@/store/editorStore";
@@ -68,6 +69,7 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
   const quickFloorOpen = useEditorStore((s) => s.quickFloorOpen);
   const roomPlacerOpen = useEditorStore((s) => s.roomPlacerOpen);
   const guideOpen = useEditorStore((s) => s.guideOpen);
+  const [panelOpen, setPanelOpen] = useState(true);
   const saveStatus = useAutosave();
   useShortcuts(state === "ready");
 
@@ -128,6 +130,27 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
         ) : (
           <>
             <Toolbar />
+            {/* Properties sit right next to the tools, so the eye and mouse stay on the left. */}
+            {panelOpen ? (
+              <aside aria-label="Thuộc tính và kiểm tra" className="w-80 shrink-0 overflow-y-auto border-r border-line bg-surface">
+                <Row className="sticky top-0 z-10 items-center gap-2 border-b border-line bg-surface px-3 py-1">
+                  <SlidersHorizontal size={14} className="text-ink-muted" />
+                  <Text className="flex-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">Bảng điều khiển</Text>
+                  <IconButton label="Thu gọn bảng điều khiển" className="h-7 w-7" onClick={() => setPanelOpen(false)}>
+                    <PanelLeftClose size={15} />
+                  </IconButton>
+                </Row>
+                <GettingStarted />
+                <Inspector />
+                <SidePanels issues={issues} />
+              </aside>
+            ) : (
+              <Box className="shrink-0 border-r border-line bg-surface p-1">
+                <IconButton label="Mở bảng điều khiển" onClick={() => setPanelOpen(true)}>
+                  <PanelLeftOpen size={16} />
+                </IconButton>
+              </Box>
+            )}
             <Col className="min-w-0 flex-1">
               <FloorBar />
               <Row className="min-h-0 flex-1">
@@ -148,13 +171,6 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
               </Row>
             </Col>
           </>
-        )}
-        {view !== "finance" && (
-          <aside aria-label="Thuộc tính và kiểm tra" className="w-80 shrink-0 overflow-y-auto border-l border-line bg-surface">
-            <GettingStarted />
-            <Inspector />
-            <SidePanels issues={issues} />
-          </aside>
         )}
       </Row>
       {lotWizardOpen && <LotWizard onClose={() => useEditorStore.getState().setLotWizardOpen(false)} />}

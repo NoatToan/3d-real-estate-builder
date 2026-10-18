@@ -113,18 +113,43 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await page.waitForTimeout(2500);
   await shot(page, "11-viewer-3d");
 
-  // 9. Built-in user guide
+  // 9. Move furniture in 3D: drag the bed, the 2D plan beside it follows
+  await page.getByRole("radio", { name: "2D + 3D", exact: true }).click();
+  await page.getByRole("button", { name: "Nhìn từ trên xuống" }).click();
+  await page.waitForTimeout(800);
+  type Probe = { id: string; x: number; y: number; screen: { x: number; y: number } } | null;
+  const probe = () => page.evaluate(() => (window as unknown as { __reb3d: { furniture: (k: string) => Probe } }).__reb3d.furniture("bedDouble"));
+  const bed = await probe();
+  expect(bed).not.toBeNull();
+  const canvas3d = page.getByRole("img", { name: "Mô hình 3D của ngôi nhà" }).or(page.locator('canvas[aria-label="Mô hình 3D của ngôi nhà"]')).first();
+  const cb = (await canvas3d.boundingBox())!;
+  const sx = cb.x + bed!.screen.x;
+  const sy = cb.y + bed!.screen.y;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  for (let k = 1; k <= 6; k++) await page.mouse.move(sx, sy + 5 * k);
+  await page.mouse.up();
+  const moved = await probe();
+  expect(Math.hypot(moved!.x - bed!.x, moved!.y - bed!.y)).toBeGreaterThan(0.3);
+  await shot(page, "12-drag-3d");
+  // One undo puts it back.
+  await page.getByRole("button", { name: "Hoàn tác" }).click();
+  const back = await probe();
+  expect(Math.hypot(back!.x - bed!.x, back!.y - bed!.y)).toBeLessThan(0.01);
+  await page.getByRole("button", { name: "Làm lại" }).click();
+
+  // 10. Built-in user guide
   await page.getByRole("button", { name: "Hướng dẫn sử dụng" }).click();
   const guide = page.getByRole("dialog");
   await expect(guide).toBeVisible();
-  await shot(page, "12-guide");
+  await shot(page, "13-guide");
   await page.keyboard.press("Escape");
   await expect(guide).toBeHidden();
 
-  // 10. Finance
+  // 11. Finance
   await page.getByRole("radio", { name: "Tài chính" }).click();
   await expect(page.getByText(/Diện tích quy đổi/).first()).toBeVisible();
-  await shot(page, "13-finance");
+  await shot(page, "14-finance");
 
   if (capture) {
     const video = page.video();

@@ -6,7 +6,7 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
 import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
 import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder";
 import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder";
@@ -45,6 +45,15 @@ export interface SceneInput {
 export interface PickTarget {
   floorId: string;
   id: string;
+  /** Furniture and stairs can be dragged across their floor in 3D. */
+  kind?: "furniture" | "stair";
+}
+
+/** Drag of a furniture piece / stair on its floor plane; dx, dy are plan metres since the start. */
+export interface DragHandlers {
+  start: (t: PickTarget) => boolean;
+  move: (t: PickTarget, dx: number, dy: number) => void;
+  end: (t: PickTarget) => void;
 }
 
 interface FloorEntry {
@@ -71,6 +80,8 @@ export class HouseScene {
   private lotKey: string | null = null;
   private lastInput: SceneInput | null = null;
   onPick: ((t: PickTarget | null) => void) | null = null;
+  onDrag: DragHandlers | null = null;
+  private drag: { target: PickTarget; height: number; from: Vector3; moved: boolean } | null = null;
 
   constructor(private canvas: HTMLCanvasElement) {
     this.engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, antialias: true }, true);
@@ -80,7 +91,11 @@ export class HouseScene {
     this.camera = new ArcRotateCamera("cam", -Math.PI / 2.6, Math.PI / 3.2, 40, Vector3.Zero(), this.scene);
     this.camera.lowerRadiusLimit = 2;
     this.camera.upperRadiusLimit = 500;
-    this.camera.upperBetaLimit = Math.PI / 2 - 0.02;
+    // Always look from above the ground: no tilting under the horizon, and panning slides the
+    // target along the ground instead of lifting or sinking it.
+    this.camera.upperBetaLimit = Math.PI / 2 - 0.12;
+    this.camera.lowerBetaLimit = 0.01;
+    this.camera.mapPanning = true;
     this.camera.wheelDeltaPercentage = 0.02;
     this.camera.panningSensibility = 60;
     this.camera.minZ = 0.1;
@@ -105,9 +120,16 @@ export class HouseScene {
     canvas.addEventListener("keydown", this.onCanvasKey);
     this.scene.onPointerObservable.add((info) => {
       this.requestRender();
+      if (info.type === PointerEventTypes.POINTERDOWN && info.event.button === 0) this.dragStart(info.pickInfo?.pickedMesh?.metadata as PickTarget | undefined);
+      else if (info.type === PointerEventTypes.POINTERMOVE) this.dragMove();
+      else if (info.type === PointerEventTypes.POINTERUP) this.dragEnd();
       if (info.type !== PointerEventTypes.POINTERTAP) return;
       const meta = info.pickInfo?.pickedMesh?.metadata as PickTarget | undefined;
       this.onPick?.(meta?.id ? meta : null);
+    });
+    // Belt and braces: whatever the input, the camera target never goes below the ground.
+    this.scene.onBeforeRenderObservable.add(() => {
+      if (this.camera.target.y < 0) this.camera.target.y = 0;
     });
 
     // Render on demand: only when the camera moves or the scene changed.
@@ -117,6 +139,42 @@ export class HouseScene {
       this.framesToRender--;
       this.scene.render();
     });
+  }
+
+  /** Point under the pointer on the horizontal plane at height h (world). */
+  private pointerOnPlane(h: number): Vector3 | null {
+    const ray = this.scene.createPickingRay(this.scene.pointerX, this.scene.pointerY, null, this.camera);
+    if (Math.abs(ray.direction.y) < 1e-6) return null;
+    const t = (h - ray.origin.y) / ray.direction.y;
+    return t > 0 ? ray.origin.add(ray.direction.scale(t)) : null;
+  }
+
+  private dragStart(meta: PickTarget | undefined) {
+    if (!meta?.kind || !this.onDrag) return;
+    const height = this.floors.get(meta.floorId)?.node.position.y ?? 0;
+    const from = this.pointerOnPlane(height);
+    if (!from || !this.onDrag.start(meta)) return;
+    this.drag = { target: meta, height, from, moved: false };
+    // The camera would orbit while we drag: hand the pointer to the drag until release.
+    this.camera.detachControl();
+  }
+
+  private dragMove() {
+    const d = this.drag;
+    if (!d) return;
+    const p = this.pointerOnPlane(d.height);
+    if (!p) return;
+    d.moved = true;
+    // World (x, z) → plan (x, -z).
+    this.onDrag?.move(d.target, p.x - d.from.x, -(p.z - d.from.z));
+  }
+
+  private dragEnd() {
+    const d = this.drag;
+    if (!d) return;
+    this.drag = null;
+    this.camera.attachControl(this.canvas, true);
+    this.onDrag?.end(d.target);
   }
 
   private framesToRender = 2;
@@ -295,13 +353,13 @@ export class HouseScene {
         if (!m) return;
         m.position.y = st.top;
         m.material = mat;
-        this.addMesh(m, node, { pick: { floorId: floor.id, id: s.id } });
+        this.addMesh(m, node, { pick: { floorId: floor.id, id: s.id, kind: "stair" } });
       });
       if (s.type === "spiral") {
         const col = CreateCylinder(`col-${s.id}`, { diameter: Math.max(0.08, s.innerRadius * 2), height: floor.height }, this.scene);
         col.position = v3({ x: s.x, y: s.y }, floor.height / 2);
         col.material = mat;
-        this.addMesh(col, node, { pick: { floorId: floor.id, id: s.id } });
+        this.addMesh(col, node, { pick: { floorId: floor.id, id: s.id, kind: "stair" } });
       }
     }
 
@@ -326,7 +384,7 @@ export class HouseScene {
         mesh.position = v3(c, p.z0 * f.height + h / 2);
         mesh.rotation.y = angle;
         mesh.material = selected.has(f.id) ? wallSel : this.mat("fu", p.color ?? spec.color, p.opacity ?? 1);
-        this.addMesh(mesh, node, { cast: (p.opacity ?? 1) === 1, pick: { floorId: floor.id, id: f.id } });
+        this.addMesh(mesh, node, { cast: (p.opacity ?? 1) === 1, pick: { floorId: floor.id, id: f.id, kind: "furniture" } });
       });
     }
 
@@ -399,6 +457,16 @@ export class HouseScene {
     this.camera.beta = 0.01;
     this.camera.alpha = -Math.PI / 2;
     this.requestRender();
+  }
+
+  /** CSS-pixel position on the canvas of a plan point h metres above a floor (used by the e2e tour). */
+  toScreen(floorId: string, p: Vec2, h = 0): { x: number; y: number } {
+    const base = this.floors.get(floorId)?.node.position.y ?? 0;
+    const w = this.engine.getRenderWidth();
+    const ht = this.engine.getRenderHeight();
+    const v = Vector3.Project(v3(p, base + h), Matrix.Identity(), this.scene.getTransformMatrix(), this.camera.viewport.toGlobal(w, ht));
+    const k = this.canvas.clientWidth / w;
+    return { x: v.x * k, y: v.y * k };
   }
 
   async screenshot(): Promise<string> {

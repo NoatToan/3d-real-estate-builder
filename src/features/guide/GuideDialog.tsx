@@ -40,17 +40,17 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
       <Col className="gap-1 text-sm text-ink">
         <TextMuted as="p">Mọi thứ được lưu tự động trong trình duyệt. Bấm Ctrl+Z để hoàn tác bất kỳ lúc nào.</TextMuted>
         <H>1. Lô đất</H>
-        <Text as="p">Bấm “Ranh đất” ở thanh trên cùng để tải ảnh sổ đỏ hoặc nhập kích thước. Nếu nhà bị giải phóng đường, bật mục “Giải phóng mặt bằng” trong bảng “Ràng buộc” bên phải.</Text>
+        <Text as="p">Bấm “Ranh đất” ở thanh trên cùng để tải ảnh sổ đỏ hoặc nhập kích thước. Nếu nhà bị giải phóng đường, bật mục “Giải phóng mặt bằng” trong mục “Ràng buộc” của Bảng điều khiển (cột bên trái).</Text>
         <H>2. Dựng mặt sàn nhanh</H>
         <Text as="p">
           Bấm <b>Tạo nhanh</b> (cây đũa phép ở thanh công cụ trái), chọn mẫu như “Tầng trệt nhà ở” hay “Văn phòng cho thuê”. Ứng dụng tự dựng tường, cửa, cầu thang, WC và nội thất vừa lô đất. Muốn đổi kích thước phòng thì sửa chiều sâu trong hộp thoại. Muốn thêm từng phòng (phòng ngủ, WC, bếp…) vào phần sàn còn trống thì bấm <b>Phòng mẫu</b>: ứng dụng tự tìm chỗ có cửa sổ, yên tĩnh, không chắn lối đi và giải thích vì sao.
         </Text>
         <H>3. Chỉnh sửa</H>
         <Text as="p">
-          Dùng công cụ <b>Chọn</b> rồi bấm vào vách, cửa, phòng hay đồ nội thất. Bảng bên phải hiện thông số để sửa. Kéo để di chuyển, <Kbd>R</Kbd> để xoay, <Kbd>Delete</Kbd> để xoá, phím mũi tên để dịch từng chút.
+          Dùng công cụ <b>Chọn</b> rồi bấm vào vách, cửa, phòng hay đồ nội thất. Bảng điều khiển bên trái hiện thông số để sửa. Kéo để di chuyển (đồ nội thất và cầu thang kéo được cả trong 3D), <Kbd>R</Kbd> để xoay, <Kbd>Delete</Kbd> để xoá, phím mũi tên để dịch từng chút.
         </Text>
         <H>4. Nội thất</H>
-        <Text as="p">Bấm “Nội thất”, chọn món đồ trong danh sách bên phải, rồi bấm lên mặt bằng để đặt. Đồ nội thất hiện cả ở 2D và 3D.</Text>
+        <Text as="p">Bấm “Nội thất”, chọn món đồ trong danh sách ở Bảng điều khiển, rồi bấm lên mặt bằng để đặt. Đồ nội thất hiện cả ở 2D và 3D.</Text>
         <H>5. Thêm tầng, xem 3D, tài chính</H>
         <Text as="p">
           Dấu <b>+</b> trên thanh tầng để thêm tầng (giữ tường bao). Chọn “3D” hoặc “2D + 3D” ở góc trên để xem phối cảnh; “Tài chính” để tính chi phí xây và dòng tiền cho thuê.
