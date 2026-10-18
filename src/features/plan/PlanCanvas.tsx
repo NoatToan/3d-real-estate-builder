@@ -23,6 +23,8 @@ import { hitTest, nearestWall } from "@/geometry/hitTest";
 import { pointAlongWall, wallLength } from "@/geometry/openings";
 import { add, dist, normalize, round, samePoint, scale as vscale, sub } from "@/geometry/vec";
 import { isTypingTarget } from "@/features/editor/useShortcuts";
+import { ObjectActions } from "@/features/editor/ObjectActions";
+import { entityOutline, findEntity } from "@/domain/selection";
 import { exportRegistry, activeFloorOf, useElementSize, useLotImage } from "./hooks";
 import {
   flat,
@@ -594,6 +596,19 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
   const singleWall = selectedIds.size === 1 ? floor.walls.find((w) => selectedIds.has(w.id)) : undefined;
   const singleManualRoom = selectedIds.size === 1 ? floor.rooms.find((r) => selectedIds.has(r.id) && r.source === "manual") : undefined;
 
+  // Floating actions next to the selection (rotate, size, duplicate, delete…), in screen px.
+  const actionAnchor = (() => {
+    if (tool !== "select" || !selectedIds.size) return null;
+    const pts = [...selectedIds].flatMap((id) => {
+      const e = findEntity(floor, id);
+      return e ? entityOutline(floor, e).points : [];
+    });
+    if (!pts.length) return null;
+    const xs = pts.map((p) => p.x * vp.scale + vp.x);
+    const ys = pts.map((p) => p.y * vp.scale + vp.y);
+    return { x: (Math.min(...xs) + Math.max(...xs)) / 2, top: Math.min(...ys), bottom: Math.max(...ys) };
+  })();
+
   const cursorStyle = spaceDown || tool === "pan" ? "grab" : tool === "select" ? (hoverId ? "move" : "default") : "crosshair";
 
   return (
@@ -674,6 +689,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
           </Layer>
         </Stage>
       )}
+      <ObjectActions floor={floor} anchor={actionAnchor} bounds={size} />
       <Row className="pointer-events-none absolute bottom-0 left-0 right-0 items-center gap-4 border-t border-line bg-surface/90 px-3 py-1 text-xs">
         <TextMuted className="tabular-nums">
           {rawCursor ? `x ${rawCursor.x.toFixed(2).replace(".", ",")}  y ${rawCursor.y.toFixed(2).replace(".", ",")} m` : "—"}

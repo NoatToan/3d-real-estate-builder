@@ -117,7 +117,7 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await page.getByRole("radio", { name: "2D + 3D", exact: true }).click();
   await page.getByRole("button", { name: "Nhìn từ trên xuống" }).click();
   await page.waitForTimeout(800);
-  type Probe = { id: string; x: number; y: number; screen: { x: number; y: number } } | null;
+  type Probe = { id: string; x: number; y: number; rotation: number; width: number; screen: { x: number; y: number } } | null;
   const probe = () => page.evaluate(() => (window as unknown as { __reb3d: { furniture: (k: string) => Probe } }).__reb3d.furniture("bedDouble"));
   const bed = await probe();
   expect(bed).not.toBeNull();
@@ -138,18 +138,33 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   expect(Math.hypot(back!.x - bed!.x, back!.y - bed!.y)).toBeLessThan(0.01);
   await page.getByRole("button", { name: "Làm lại" }).click();
 
-  // 10. Built-in user guide
+  // 10. Actions right next to the selected object, in 2D and in 3D: rotate, size, duplicate, delete
+  const bars = page.getByRole("toolbar", { name: "Thao tác nhanh với đối tượng" });
+  await expect(bars).toHaveCount(2);
+  const bar3d = bars.last();
+  await expect(bar3d).toContainText("Giường đôi 1m8");
+  await bar3d.getByRole("button", { name: "Xoay phải" }).click();
+  expect((await probe())!.rotation).toBe((bed!.rotation + 90) % 360);
+  await bars.first().getByRole("button", { name: "Kích thước" }).click();
+  const widthField = bars.first().getByLabel("Rộng");
+  await widthField.fill("1,6");
+  await widthField.press("Enter");
+  await expect.poll(async () => (await probe())!.width).toBeCloseTo(1.6);
+  await shot(page, "13-object-actions");
+  await bars.first().getByRole("button", { name: "Đóng" }).click();
+
+  // 11. Built-in user guide
   await page.getByRole("button", { name: "Hướng dẫn sử dụng" }).click();
   const guide = page.getByRole("dialog");
   await expect(guide).toBeVisible();
-  await shot(page, "13-guide");
+  await shot(page, "14-guide");
   await page.keyboard.press("Escape");
   await expect(guide).toBeHidden();
 
-  // 11. Finance
+  // 12. Finance
   await page.getByRole("radio", { name: "Tài chính" }).click();
   await expect(page.getByText(/Diện tích quy đổi/).first()).toBeVisible();
-  await shot(page, "14-finance");
+  await shot(page, "15-finance");
 
   if (capture) {
     const video = page.video();
