@@ -26,7 +26,7 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 export function dataUrlToBlob(dataUrl: string): Blob {
-  const m = /^data:([^;,]+);base64,(.*)$/s.exec(dataUrl);
+  const m = /^data:([^;,]+);base64,([\s\S]*)$/.exec(dataUrl);
   if (!m) throw new ProjectFormatError("Ảnh nhúng trong tệp không hợp lệ.");
   return new Blob([base64ToBytes(m[2])], { type: m[1] });
 }

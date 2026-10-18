@@ -22,8 +22,13 @@ export interface EditorState {
   snap: { enabled: boolean; grid: number; angleStep: number };
   show: { ghostBelow: boolean; dimensions: boolean; lotImage: boolean; grid: boolean; roomLabels: boolean };
   viewer: { hiddenFloorIds: Id[]; explode: number; upToActive: boolean; roof: boolean };
-  panels: { issues: boolean; stats: boolean; constraints: boolean };
+  panels: { issues: boolean; stats: boolean; constraints: boolean; display: boolean };
+  /** Incremented to ask the 2D/3D views to zoom to fit. */
+  fitRequest: number;
+  lotWizardOpen: boolean;
 
+  requestFit: () => void;
+  setLotWizardOpen: (open: boolean) => void;
   setView: (v: ViewMode) => void;
   setTool: (t: Tool) => void;
   setActiveFloor: (id: Id | null) => void;
@@ -51,11 +56,15 @@ const initial = {
   snap: { enabled: true, grid: 0.05, angleStep: 15 },
   show: { ghostBelow: true, dimensions: true, lotImage: false, grid: true, roomLabels: true },
   viewer: { hiddenFloorIds: [] as Id[], explode: 0, upToActive: false, roof: false },
-  panels: { issues: true, stats: true, constraints: false },
+  panels: { issues: true, stats: true, constraints: false, display: false },
+  fitRequest: 0,
+  lotWizardOpen: false,
 };
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
   ...initial,
+  requestFit: () => set({ fitRequest: get().fitRequest + 1 }),
+  setLotWizardOpen: (lotWizardOpen) => set({ lotWizardOpen }),
   setView: (view) => set({ view }),
   setTool: (tool) => set({ tool }),
   setActiveFloor: (activeFloorId) => set({ activeFloorId, selection: null }),

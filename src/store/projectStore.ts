@@ -60,7 +60,7 @@ function findFloor(d: Draft<Project>, id: Id): Draft<Floor> | undefined {
   return d.floors.find((f) => f.id === id);
 }
 
-const plain = <T,>(v: T): T => (isDraft(v) ? (current(v) as T) : v);
+const plain = <T,>(v: T): T => (isDraft(v) ? (current(v as Draft<T>) as T) : v);
 
 /** Re-derives rooms and clamps openings after walls changed. */
 function syncFloor(f: Draft<Floor>): void {
