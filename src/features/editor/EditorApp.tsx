@@ -109,6 +109,8 @@ export function EditorApp({ projectId, startWithLot }: { projectId: string; star
   useEffect(
     () =>
       useProjectStore.subscribe((st, prev) => {
+        // Undo/redo, deletes and regenerated rooms can remove what the editor points at: keep the panel in step.
+        if (st.project !== prev.project) useEditorStore.getState().syncWithProject(st.project);
         const had = prev.project?.floors.some((f) => f.walls.length);
         const has = st.project?.floors.some((f) => f.walls.length);
         if (prev.project && !had && has && useEditorStore.getState().view === "2d") useEditorStore.getState().setView("split");
