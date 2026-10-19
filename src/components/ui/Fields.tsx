@@ -85,6 +85,15 @@ export function NumberField({
     if (clamped !== value) onCommit(clamped);
   };
 
+  // Typed but not yet committed when the field goes away (e.g. another object was picked): save it to this field's object.
+  const pending = useRef<() => void>(() => {});
+  useEffect(() => {
+    pending.current = () => {
+      if (focused.current && text !== fmt(value, decimals)) commit(text);
+    };
+  });
+  useEffect(() => () => pending.current(), []);
+
   return (
     <Box className={className}>
       {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
@@ -150,6 +159,13 @@ export function TextField({ label, value, onCommit, placeholder, maxLength = 200
   useEffect(() => {
     if (!focused.current) setText(value);
   }, [value]);
+  const pending = useRef<() => void>(() => {});
+  useEffect(() => {
+    pending.current = () => {
+      if (focused.current && !live && text !== value) onCommit(text);
+    };
+  });
+  useEffect(() => () => pending.current(), []);
   return (
     <Box className={className}>
       {label && <FieldLabel htmlFor={id}>{label}</FieldLabel>}

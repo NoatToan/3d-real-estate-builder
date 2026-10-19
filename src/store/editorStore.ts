@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { FurnitureKind, Id, StairType } from "@/domain/types";
+import type { FurnitureKind, Id, Project, StairType } from "@/domain/types";
 
 export type Tool = "select" | "pan" | "wall" | "room" | "door" | "window" | "stair" | "furniture" | "measure";
 /** "finance" swaps the drawing panes for the feasibility (dự toán & dòng tiền) view. */
@@ -67,6 +67,8 @@ export interface EditorState {
   setPanelTab: (t: PanelTab) => void;
   setPanelOpen: (open: boolean) => void;
   setTourDone: (done: boolean) => void;
+  /** Drops references to floors/objects that no longer exist (after undo, redo, delete, regenerated rooms…). */
+  syncWithProject: (project: Project | null) => void;
   reset: () => void;
 }
 
@@ -101,7 +103,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setQuickFloorOpen: (quickFloorOpen) => set({ quickFloorOpen }),
   setRoomPlacerOpen: (roomPlacerOpen) => set({ roomPlacerOpen }),
   setView: (view) => set({ view }),
-  setTool: (tool) => set(tool === "select" || tool === "pan" ? { tool } : { tool, panelTab: "edit" }),
+  // A drawing tool replaces the selection, so "Chỉnh sửa" shows the tool's options instead of the old object.
+  setTool: (tool) => set(tool === "select" || tool === "pan" ? { tool } : { tool, selection: null, panelTab: "edit" }),
   setActiveFloor: (activeFloorId) => set({ activeFloorId, selection: null }),
   select: (selection) => (selection && selection.ids.length ? set({ selection, panelTab: "edit" }) : set({ selection: null })),
   toggleSelect: (floorId, id) => {
@@ -125,5 +128,37 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setPanelTab: (panelTab) => set({ panelTab }),
   setPanelOpen: (panelOpen) => set({ panelOpen }),
   setTourDone: (tourDone) => set({ tourDone }),
+  syncWithProject: (project) => {
+    const patch = staleEditorRefs(get(), project);
+    if (patch) set(patch);
+  },
   reset: () => set({ ...initial }),
 }));
+
+function entityIds(floor: Project["floors"][number]): Set<Id> {
+  return new Set([...floor.walls, ...floor.openings, ...floor.stairs, ...floor.furniture, ...floor.rooms].map((e) => e.id));
+}
+
+/** Patch that removes editor references to floors or objects missing from the project, or null when all are valid. */
+export function staleEditorRefs(
+  s: Pick<EditorState, "activeFloorId" | "selection" | "viewer">,
+  project: Project | null,
+): Partial<Pick<EditorState, "activeFloorId" | "selection" | "viewer">> | null {
+  if (!project || !project.floors.length) return null;
+  const patch: Partial<Pick<EditorState, "activeFloorId" | "selection" | "viewer">> = {};
+  const floorIds = new Set(project.floors.map((f) => f.id));
+  if (!s.activeFloorId || !floorIds.has(s.activeFloorId)) patch.activeFloorId = project.floors[0].id;
+  if (s.selection) {
+    const floor = project.floors.find((f) => f.id === s.selection!.floorId);
+    const activeId = patch.activeFloorId ?? s.activeFloorId;
+    if (!floor || floor.id !== activeId) patch.selection = null;
+    else {
+      const have = entityIds(floor);
+      const ids = s.selection.ids.filter((id) => have.has(id));
+      if (ids.length !== s.selection.ids.length) patch.selection = ids.length ? { floorId: floor.id, ids } : null;
+    }
+  }
+  const hidden = s.viewer.hiddenFloorIds.filter((id) => floorIds.has(id));
+  if (hidden.length !== s.viewer.hiddenFloorIds.length) patch.viewer = { ...s.viewer, hiddenFloorIds: hidden };
+  return Object.keys(patch).length ? patch : null;
+}

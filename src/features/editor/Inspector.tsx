@@ -306,6 +306,7 @@ export function Inspector() {
   const floors = useProjectStore((s) => s.project?.floors.length ?? 0);
   if (!floor) return null;
 
+  // Each panel is keyed by its object so a half-typed field never carries over to the next selection.
   const ids = selection && selection.floorId === floor.id ? selection.ids : [];
   if (ids.length > 1) {
     return (
@@ -319,20 +320,20 @@ export function Inspector() {
   if (ids.length === 1) {
     const id = ids[0];
     const wall = floor.walls.find((w) => w.id === id);
-    if (wall) return <WallInspector floor={floor} wall={wall} />;
+    if (wall) return <WallInspector key={wall.id} floor={floor} wall={wall} />;
     const opening = floor.openings.find((o) => o.id === id);
-    if (opening) return <OpeningInspector floor={floor} opening={opening} />;
+    if (opening) return <OpeningInspector key={opening.id} floor={floor} opening={opening} />;
     const stair = floor.stairs.find((s) => s.id === id);
-    if (stair) return <StairInspector floor={floor} stair={stair} isTop={index === floors - 1} />;
+    if (stair) return <StairInspector key={stair.id} floor={floor} stair={stair} isTop={index === floors - 1} />;
     const item = floor.furniture.find((x) => x.id === id);
-    if (item) return <FurnitureInspector floor={floor} item={item} />;
+    if (item) return <FurnitureInspector key={item.id} floor={floor} item={item} />;
     const room = floor.rooms.find((r) => r.id === id);
-    if (room) return <RoomInspector floor={floor} room={room} />;
+    if (room) return <RoomInspector key={room.id} floor={floor} room={room} />;
   }
   return (
     <>
       <ToolOptions />
-      <FloorProperties floor={floor} />
+      <FloorProperties key={floor.id} floor={floor} />
     </>
   );
 }
