@@ -13,6 +13,7 @@ import { connectedEndpoints, wallRenderQuad } from "@/geometry/hitTest";
 import { clampOpening, pointAlongWall, wallDirection, wallLength, wallNormal } from "@/geometry/openings";
 import { generateStair } from "@/geometry/stairs";
 import { dist, mid, normalize, perp, sub } from "@/geometry/vec";
+import { fitLabel, labelRoom, textWidthPx } from "@/geometry/labelFit";
 
 export interface Viewport {
   scale: number;
@@ -32,7 +33,7 @@ function uprightAngle(d: Vec2): number {
 
 export function Label({ at, text, scale, size = 11, color = C.text, angle = 0, bold = false }: { at: Vec2; text: string; scale: number; size?: number; color?: string; angle?: number; bold?: boolean }) {
   const fs = size / scale;
-  const w = (text.length * size * 0.62 + 8) / scale;
+  const w = (textWidthPx(text, size) + 8) / scale;
   return (
     <KText
       x={at.x}
@@ -113,6 +114,12 @@ export const LotShape = memo(function LotShape({
 }) {
   const lens = edgeLengths(polygon);
   const orient = Math.sign(signedArea(polygon)) || 1;
+  const cutAt = roadCut ? centroid(roadCut.cut) : null;
+  const cutText = roadCut ? `Giải phóng ≈ ${fmtArea(roadCut.cutArea)}` : "";
+  const cutBox = roadCut && cutAt ? labelRoom(roadCut.cut, cutAt) : { width: 0, height: 0 };
+  const cutK = fitLabel([{ text: cutText, size: 11 }], cutBox.width * scale * 0.9, cutBox.height * scale * 1.5);
+  const frontText = roadCut ? `Ranh lộ giới · mặt tiền ${fmtLength(roadCut.frontWidth)}` : "";
+  const frontK = roadCut ? fitLabel([{ text: frontText, size: 10 }], dist(roadCut.line[0], roadCut.line[1]) * scale * 0.9) : 0;
   return (
     <Group listening={false}>
       <Line points={flat(polygon)} closed fill={C.lotFill} stroke={C.lotStroke} strokeWidth={2} dash={[10, 5]} strokeScaleEnabled={false} />
@@ -120,13 +127,13 @@ export const LotShape = memo(function LotShape({
         <>
           <Line points={flat(roadCut.cut)} closed fill={C.roadCutFill} strokeEnabled={false} />
           <Line points={flat(roadCut.line)} stroke={C.roadCutStroke} strokeWidth={2} strokeScaleEnabled={false} />
-          <Label at={centroid(roadCut.cut)} text={`Giải phóng ≈ ${fmtArea(roadCut.cutArea)}`} scale={scale} color={C.roadCutStroke} bold />
-          {showDims && (
+          {cutAt && cutK > 0 && <Label at={cutAt} text={cutText} scale={scale} size={11 * cutK} color={C.roadCutStroke} bold />}
+          {showDims && frontK > 0 && (
             <Label
               at={towards(mid(roadCut.line[0], roadCut.line[1]), centroid(roadCut.cut), 12 / scale)}
-              text={`Ranh lộ giới · mặt tiền ${fmtLength(roadCut.frontWidth)}`}
+              text={frontText}
               scale={scale}
-              size={10}
+              size={10 * frontK}
               color={C.roadCutStroke}
               angle={uprightAngle(normalize(sub(roadCut.line[1], roadCut.line[0])))}
             />
@@ -139,9 +146,12 @@ export const LotShape = memo(function LotShape({
           const q = polygon[(i + 1) % polygon.length];
           const d = normalize(sub(q, p));
           const out = perp(d);
-          const off = (-orient * 14) / scale;
+          const text = fmtLength(lens[i]);
+          const k = fitLabel([{ text, size: 11 }], lens[i] * scale * 0.8);
+          if (!k) return null;
+          const off = (-orient * (11 * k * 0.5 + 8)) / scale;
           const m = mid(p, q);
-          return <Label key={i} at={{ x: m.x + out.x * off, y: m.y + out.y * off }} text={fmtLength(lens[i])} scale={scale} color={C.lotStroke} angle={uprightAngle(d)} bold />;
+          return <Label key={i} at={{ x: m.x + out.x * off, y: m.y + out.y * off }} text={text} scale={scale} size={11 * k} color={C.lotStroke} angle={uprightAngle(d)} bold />;
         })}
     </Group>
   );
@@ -263,11 +273,14 @@ export const WallDimensions = memo(function WallDimensions({ walls, scale }: { w
     <Group listening={false}>
       {walls.map((w) => {
         const L = wallLength(w);
-        if (L * scale < 40) return null;
+        const text = fmtLength(L);
+        // Fit the dimension to its wall: it shrinks with the wall and hides when it no longer fits.
+        const k = fitLabel([{ text, size: 10 }], L * scale * 0.8);
+        if (!k) return null;
         const n = wallNormal(w);
-        const off = w.thickness / 2 + 9 / scale;
+        const off = w.thickness / 2 + (10 * k * 0.5 + 4) / scale;
         const m = mid(w.a, w.b);
-        return <Label key={w.id} at={{ x: m.x + n.x * off, y: m.y + n.y * off }} text={fmtLength(L)} scale={scale} size={10} color={C.dimension} angle={uprightAngle(wallDirection(w))} />;
+        return <Label key={w.id} at={{ x: m.x + n.x * off, y: m.y + n.y * off }} text={text} scale={scale} size={10 * k} color={C.dimension} angle={uprightAngle(wallDirection(w))} />;
       })}
     </Group>
   );
@@ -321,10 +334,20 @@ export const RoomsShape = memo(function RoomsShape({
         rooms.map((r) => {
           const poly = r.netPolygon ?? r.polygon;
           const p = labelPoint(poly);
+          const box = labelRoom(poly, p);
+          const availW = box.width * scale * 0.9;
+          const availH = box.height * scale * 0.9;
+          const name = { text: r.name, size: 12 };
+          const area = { text: fmtArea(roomNetArea(r)), size: 10 };
+          // Name + area when both fit the room, else just the name, else nothing (no text spilling over neighbours).
+          const both = fitLabel([name, area], availW, availH);
+          const k = both || fitLabel([name], availW, availH);
+          if (!k) return null;
+          if (!both) return <Label key={`l-${r.id}`} at={p} text={r.name} scale={scale} size={12 * k} bold />;
           return (
             <Group key={`l-${r.id}`}>
-              <Label at={{ x: p.x, y: p.y - 7 / scale }} text={r.name} scale={scale} size={12} bold />
-              <Label at={{ x: p.x, y: p.y + 8 / scale }} text={fmtArea(roomNetArea(r))} scale={scale} size={10} color={C.textMuted} />
+              <Label at={{ x: p.x, y: p.y - (6 * k) / scale }} text={r.name} scale={scale} size={12 * k} bold />
+              <Label at={{ x: p.x, y: p.y + (7 * k) / scale }} text={area.text} scale={scale} size={10 * k} color={C.textMuted} />
             </Group>
           );
         })}
@@ -337,13 +360,14 @@ export function StairGlyph({ stair, rise, selected, hover, scale, preview = fals
   const start = g.walkline[0];
   const second = g.walkline[1] ?? start;
   const d = dist(start, second) > 1e-6 ? normalize(sub(second, start)) : { x: 1, y: 0 };
+  const upK = fitLabel([{ text: "LÊN", size: 10 }], stair.width * scale);
   return (
     <Group listening={false} opacity={preview ? 0.55 : 1}>
       {g.steps.map((s, i) => (
         <Line key={i} points={flat(s.polygon)} closed fill={s.kind === "landing" ? C.void : C.stairFill} opacity={s.kind === "landing" ? 0.25 : 1} stroke={C.stair} strokeWidth={1} strokeScaleEnabled={false} perfectDrawEnabled={false} />
       ))}
       <Arrow points={flat(g.walkline)} stroke={C.stair} fill={C.stair} strokeWidth={1.5} pointerLength={8 / scale} pointerWidth={7 / scale} strokeScaleEnabled={false} />
-      <Label at={{ x: start.x - d.x * (12 / scale), y: start.y - d.y * (12 / scale) }} text="LÊN" scale={scale} size={10} color={C.stair} bold />
+      {upK > 0 && <Label at={{ x: start.x - d.x * (12 / scale), y: start.y - d.y * (12 / scale) }} text="LÊN" scale={scale} size={10 * upK} color={C.stair} bold />}
       {(selected || hover) && <Line points={flat(g.footprint)} closed stroke={C.selection} strokeWidth={selected ? 2.5 : 1.5} strokeScaleEnabled={false} />}
     </Group>
   );
@@ -367,12 +391,14 @@ export const VoidsShape = memo(function VoidsShape({ below, scale }: { below: Fl
       {below.stairs.map((s) => {
         const fp = generateStair(s, below.height).footprint;
         const c = centroid(fp);
+        const box = labelRoom(fp, c);
+        const k = fitLabel([{ text: "Ô cầu thang", size: 10 }], box.width * scale * 0.9, box.height * scale * 0.9);
         return (
           <Group key={s.id}>
             <Line points={flat(fp)} closed stroke={C.void} strokeWidth={1.5} dash={[6, 4]} fill={C.stairFill} strokeScaleEnabled={false} />
             {fp.length === 4 && <Line points={flat([fp[0], fp[2]])} stroke={C.void} strokeWidth={1} strokeScaleEnabled={false} />}
             {fp.length === 4 && <Line points={flat([fp[1], fp[3]])} stroke={C.void} strokeWidth={1} strokeScaleEnabled={false} />}
-            <Label at={c} text="Ô cầu thang" scale={scale} size={10} color={C.stair} />
+            {k > 0 && <Label at={c} text="Ô cầu thang" scale={scale} size={10 * k} color={C.stair} />}
           </Group>
         );
       })}
@@ -388,6 +414,9 @@ export function Handle({ at, scale, color = C.selection }: { at: Vec2; scale: nu
 export function FurnitureGlyph({ item, selected, hover, scale, preview = false }: { item: Furniture; selected?: boolean; hover?: boolean; scale: number; preview?: boolean }) {
   const spec = furnitureSpec(item.kind);
   const stroke = selected || hover ? C.selection : C.furnitureStroke;
+  // The label isn't rotated with the piece, so fit it to the shorter side.
+  const side = Math.min(item.width, item.depth) * scale * 0.9;
+  const labelK = fitLabel([{ text: item.name, size: 10 }], side, side);
   return (
     <Group opacity={preview ? 0.55 : 1} listening={false}>
       <Line points={flat(furnitureRect(item))} closed fill={C.furnitureFill} stroke={stroke} strokeWidth={selected ? 2 : 1} strokeScaleEnabled={false} />
@@ -407,7 +436,7 @@ export function FurnitureGlyph({ item, selected, hover, scale, preview = false }
           <Line key={i} points={flat(furnitureRect(item, p))} closed stroke={stroke} strokeWidth={0.75} strokeScaleEnabled={false} />
         ),
       )}
-      {!preview && Math.min(item.width, item.depth) * scale > 34 && <Label at={{ x: item.x, y: item.y }} text={item.name} scale={scale} size={10} color={C.textMuted} />}
+      {!preview && labelK > 0 && <Label at={{ x: item.x, y: item.y }} text={item.name} scale={scale} size={10 * labelK} color={C.textMuted} />}
     </Group>
   );
 }

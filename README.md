@@ -27,6 +27,7 @@ Every image below is captured by the Playwright tour in [`e2e/demo.spec.ts`](e2e
 | 8 | **Phòng mẫu** — chọn "Phòng ngủ master": app chấm điểm các vị trí (cửa sổ ra mặt tiền/mặt sau, yên tĩnh, gần WC, giữ lối đi) và giải thích lý do | ![](docs/demo/08-room-placer.png) |
 | 9 | **Tự xếp nhiều phòng** — chọn bộ "Master + phòng ngủ đơn + WC", app đặt lần lượt từng phòng vào chỗ tốt nhất | ![](docs/demo/09-auto-rooms.png) |
 | 10 | **Kết quả** — vách, cửa, cửa sổ, giường, tủ, thiết bị WC được dựng sẵn | ![](docs/demo/10-rooms-plan.png) |
+| 10a | **Thu nhỏ bản vẽ** — chữ (tên phòng, kích thước tường) co theo phòng/tường và tự ẩn khi không còn chỗ, nên không bao giờ đè lên nhau | ![](docs/demo/10a-zoom-out-labels.png) |
 | 11 | **Xem 3D** — các tầng, nội thất, cầu thang; camera luôn nhìn từ trên mặt đất (không lật xuống dưới nền) | ![](docs/demo/11-viewer-3d.png) |
 | 12 | **Kéo đồ trong 3D** — kéo giường ngay trên mô hình 3D, mặt bằng 2D bên cạnh cập nhật theo; Ctrl+Z hoàn tác cả lần kéo | ![](docs/demo/12-drag-3d.png) |
 | 13 | **Thao tác ngay cạnh đối tượng** — chọn đồ/cửa/vách/phòng (trong 2D hoặc 3D) là hiện thanh nổi: xoay trái/phải, kích thước, nhân bản, đổi bản lề/chiều mở, công năng phòng, xoá | ![](docs/demo/13-object-actions.png) |

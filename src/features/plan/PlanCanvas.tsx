@@ -22,11 +22,12 @@ import { snapPoint, type SnapContext, type SnapResult } from "@/geometry/snappin
 import { hitTest, nearestWall } from "@/geometry/hitTest";
 import { pointAlongWall, wallLength } from "@/geometry/openings";
 import { add, dist, normalize, round, samePoint, scale as vscale, sub } from "@/geometry/vec";
+import { fitLabel, textWidthPx } from "@/geometry/labelFit";
 import { isTypingTarget } from "@/features/editor/useShortcuts";
 import { ObjectActions } from "@/features/editor/ObjectActions";
 import { EmptyFloorStart } from "./EmptyFloorStart";
 import { entityOutline, findEntity } from "@/domain/selection";
-import { DIRECTION_LABELS, sectorWedges, STAR_INFO } from "@/domain/fengShui";
+import { DIRECTION_LABELS, houseCentre, sectorWedges, STAR_INFO } from "@/domain/fengShui";
 import { exportRegistry, activeFloorOf, useElementSize, useLotImage } from "./hooks";
 import {
   flat,
@@ -627,6 +628,7 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
 
   // Bát trạch sectors around the centre of this floor (Phong thuỷ overlay).
   const wedges = show.fengShui && project.fengShui.facing ? sectorWedges(project, floor) : [];
+  const houseSize = wedges.length ? houseCentre(project, floor).size : 0;
 
   // Floating actions next to the selection (rotate, size, duplicate, delete…), in screen px.
   const actionAnchor = (() => {
@@ -679,10 +681,13 @@ export function PlanCanvas({ issues }: { issues: Issue[] }) {
             {wedges.map((w) => {
               const text = `${DIRECTION_LABELS[w.dir]}${w.star ? ` · ${STAR_INFO[w.star].label}` : ""}`;
               // Push side labels out by half their width so they don't run over the house.
+              // Neighbouring labels sit about half a house apart, so fit each one to that and hide it when zoomed far out.
+              const k = fitLabel([{ text, size: 11 }], houseSize * vp.scale * 0.5);
+              if (!k) return null;
               const dx = w.labelAt.x - w.polygon[0].x;
-              const half = (text.length * 11 * 0.62 + 8) / vp.scale / 2;
+              const half = (textWidthPx(text, 11 * k) + 8) / vp.scale / 2;
               const at = Math.abs(dx) > 0.3 ? { x: w.labelAt.x + Math.sign(dx) * half, y: w.labelAt.y } : w.labelAt;
-              return <Label key={`l-${w.dir}`} at={at} text={text} scale={vp.scale} size={11} color={w.star == null ? "#475569" : STAR_INFO[w.star].good ? "#15803d" : "#b91c1c"} bold />;
+              return <Label key={`l-${w.dir}`} at={at} text={text} scale={vp.scale} size={11 * k} color={w.star == null ? "#475569" : STAR_INFO[w.star].good ? "#15803d" : "#b91c1c"} bold />;
             })}
             {show.ghostBelow && below && <WallsShape walls={below.walls} openings={[]} selected={EMPTY} errors={EMPTY} hoverId={null} ghost />}
           </Layer>
