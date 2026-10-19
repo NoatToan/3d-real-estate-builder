@@ -122,6 +122,18 @@ test("tour: lô đất → AI thiết kế mặt sàn → phòng mẫu → 3D �
   await page.getByRole("radio", { name: "2D", exact: true }).click();
   await shot(page, "10-rooms-plan");
 
+  // 7b. Zoom far out: labels shrink with their room/wall and hide when they no longer fit, so they never pile up
+  const zoomInfo = page.getByText(/^1 m = \d+ px$/);
+  const pxPerM = async () => Number((await zoomInfo.textContent())?.match(/= (\d+)/)?.[1]);
+  const zoomBefore = await pxPerM();
+  const box = await page.locator("canvas").first().boundingBox();
+  if (!box) throw new Error("plan canvas not visible");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, 250);
+  await expect.poll(pxPerM).toBeLessThan(zoomBefore * 0.6);
+  await shot(page, "10a-zoom-out-labels");
+  await page.getByRole("button", { name: /Vừa khung/ }).first().click();
+
   // 8. 3D view
   await page.getByRole("radio", { name: "3D", exact: true }).click();
   await expect(page.locator("canvas").first()).toBeVisible();
