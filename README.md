@@ -113,4 +113,4 @@ See `.env.example`:
 
 ## Deploy
 
-Deployed on Vercel as a regular Next.js app (static pages + one serverless route); install/build commands are pinned in `vercel.json`. Every merge to `main` deploys production. Set `ANTHROPIC_API_KEY` in the Vercel project to turn on the AI designer.
+Deployed on Vercel as a regular Next.js app (static pages + one serverless route); install/build commands are pinned in `vercel.json`. Every merge to `main` deploys production. The Vercel project lives in the Hobby team `noattoans-projects`; don't create or deploy it in another Vercel account unless that is explicitly requested (see `AGENTS.md` → "Deploy target"). Set `ANTHROPIC_API_KEY` in the Vercel project to turn on the AI designer.

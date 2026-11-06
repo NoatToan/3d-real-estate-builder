@@ -23,3 +23,11 @@ Bug fixes and refactors with no visible change don't need new screenshots, but `
 ## UX rules
 
 Follow `docs/ux-principles.md` for every user-facing change (empty states that show the next step, tabs/progressive disclosure, highlighted primary actions, easiest path as default, actions next to the object, icon + Vietnamese label, jargon hints, explained automatic decisions, undo). Run its checklist before finishing.
+
+## Deploy target (Vercel account)
+
+Production lives in the Vercel Hobby team **`noattoans-projects`** (project `3d-real-estate-builder`, Git-connected to `NoatToan/3d-real-estate-builder`, branch `main`). Every merge to `main` deploys https://3d-real-estate-builder-rho.vercel.app by itself — no manual deploy needed.
+
+- **Never** create, link or deploy this project in the HBLAB work account (team `toanhbls-projects`) or any other account, unless the request explicitly asks to deploy there. An empty duplicate was found there and deleted on 2026-11-06.
+- Before any `vercel link` / `vercel deploy` / `vercel env add`, check the scope with `vercel whoami` and `vercel project ls --scope noattoans-projects`; if the CLI is logged into a different account, stop and ask instead of creating a new project.
+- Env vars are set in that Vercel project only (`ANTHROPIC_API_KEY`, optional `AI_LAYOUT_MODEL`); never commit their values.
